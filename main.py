@@ -3,6 +3,7 @@ import os
 import time
 import board
 import busio
+import statistics
 from smbus2 import SMBus  
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'AHRS_package')))
@@ -13,10 +14,22 @@ bus = SMBus(1)
 
 
 #Initialize
-sensors_vl6180x, sensors_vl53l1x, bmp388_sensor, bmx160_initialized = initialize_all_sensors(i2c, bus)
+sensors_vl6180x, sensors_vl53l1x, bmp388_sensor, bmx160_sensor = initialize_all_sensors(i2c, bus)
+
+
+bmp388_temperatures = []
+bmp388_pressures = []
+bmx160_accels = {"x": [], "y": [], "z": []}
+vl6180x_distances = {}
+vl53l1x_distances = {}
+
+last_mean_calculation_time = time.time()
 
 try:
     while True:
+
+        current_time = time.time()
+
         # Read BMP388
         if bmp388_sensor:
             select_channel(i2c, 0)
@@ -28,7 +41,7 @@ try:
                 print("BMP388 Error reading data")
 
         # Read BMX160
-        if bmx160_initialized:
+        if bmx160_sensor:
             select_channel(i2c, 0)
             try:
                 accel_x, accel_y, accel_z = read_bmx160(bus)
@@ -44,7 +57,9 @@ try:
             select_channel(i2c, channel)
             try:
                 distance = sensor.range
-                print(f"Channel {channel}, VL6180X Distance: {distance} mm")
+                if channel not in vl6180x_distances:
+                    vl6180x_distances[channel] = []
+                vl6180x_distances[channel].append(distance)
             except RuntimeError:
                 print(f"Channel {channel}, VL6180X Error reading distance")
         
@@ -53,16 +68,33 @@ try:
             try:
                 distance = sensor.distance
                 if (distance is not None):
-                    distance = distance * 10
+                    distance = distance * 10 #Convert to mm
+                if channel not in vl53l1x_distances:
+                    vl53l1x_distances[channel] = []
+                vl53l1x_distances[channel].append(distance)
 
-                print(f"Channel {channel}, VL53L1X Distance: {distance} mm")
             except RuntimeError:
                 print(f"Channel {channel}, VL53L1X Error reading distance")
 
+        #Calculate and print means od distances every 0.25 second
+        if current_time - last_mean_calculation_time >= 0.25:
+
+            for channel, distances in vl6180x_distances.items():
+                distances = [d for d in distances if d is not None] #Remove none values
+                if distances:
+                    mean_distance = statistics.mean(distances)
+                    print(f"Mean Vl6180X Channel {channel} Distance: {mean_distance:.2f} mm")
+                    distances.clear()
+            
+            for channel, distances in vl53l1x_distances.items():
+                distances = [d for d in distances if d is not None]
+                if distances:
+                    mean_distance = statistics.mean(distances)
+                    print(f"Mean VL53L1X Channel {channel} Distance: {mean_distance:.2f} mm")
+                    distances.clear()
+
+            last_mean_calculation_time = current_time
         
-
-        time.sleep(1)
-
 except KeyboardInterrupt:
     print("Program interrupted")
 
