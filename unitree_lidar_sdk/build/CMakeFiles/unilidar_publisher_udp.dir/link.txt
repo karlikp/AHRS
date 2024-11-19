@@ -1,0 +1,1 @@
+/usr/bin/c++ -std=c++14  -O3 -Wall -DNDEBUG -rdynamic CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o -o ../bin/unilidar_publisher_udp   -L/home/karol/Desktop/repos/unilidar_sdk/unitree_lidar_sdk/lib/x86_64  -Wl,-rpath,/home/karol/Desktop/repos/unilidar_sdk/unitree_lidar_sdk/lib/x86_64 -Wl,-Bstatic -lunitree_lidar_sdk -Wl,-Bdynamic 
