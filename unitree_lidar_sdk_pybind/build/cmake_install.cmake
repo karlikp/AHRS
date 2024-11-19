@@ -1,4 +1,4 @@
-# Install script for directory: /home/karol/Desktop/repos/SLAM/unitree_lidar_sdk_pybind
+# Install script for directory: /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/karol/Desktop/repos/SLAM/unitree_lidar_sdk_pybind/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

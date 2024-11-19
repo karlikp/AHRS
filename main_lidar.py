@@ -15,10 +15,9 @@ print("Setting Lidar working mode to: NORMAL...")
 lidar.set_working_mode(1)  # NORMAL
 time.sleep(1)
 
-# Create data directory if it doesn't exist
-import os
-if not os.path.exists("data"):
-    os.makedirs("data")
+open("data/dirty_percentage.txt", "w").close()
+open("data/imu_data.txt", "w").close()
+open("data/cloud_data.txt", "w").close()
 
 print("\nChecking dirty percentage...")
 count_percentage = 0
@@ -53,9 +52,8 @@ while True:
                 f"Time delay (us): {imu_data['time_delay']}\n\n"
             )
 
-            with open("data/imu_data.txt", "a") as imu_file:
+            with open("data/imu_data.txt", "w") as imu_file:
                 imu_file.write(imu_output)
-                print(imu_output)
         else:
             print("No IMU data received.")
 
@@ -73,6 +71,6 @@ while True:
             cloud_output += f"\t{point}\n"
 
         # Use append mode to add to the cloud_data.txt file
-        with open("data/cloud_data.txt", "a") as cloud_file:
+        with open("data/cloud_data.txt", "w") as cloud_file:
             cloud_file.write(cloud_output)
-            print(cloud_output)
+           

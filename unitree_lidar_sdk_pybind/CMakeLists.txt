@@ -18,11 +18,11 @@ include_directories(
 )
 
 # Na rasp zmien ścieżke do arm
-link_directories(/home/karol/Desktop/repos/SLAM/unitree_lidar_sdk/lib/aarch64 
+link_directories(/home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk/lib/aarch64 
 )
 
 # Tworzenie targetu dla modułu Python
 pybind11_add_module(unitree_lidar_sdk_pybind unitree_lidar_sdk_pybind.cpp)
 
 # Dodaj bibliotekę Python3 do ścieżek linkowania
-target_link_libraries(unitree_lidar_sdk_pybind PRIVATE /home/karol/Desktop/repos/SLAM/unitree_lidar_sdk/lib/x86_64 libunitree_lidar_sdk.a)
+target_link_libraries(unitree_lidar_sdk_pybind PRIVATE /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk/lib/x86_64 libunitree_lidar_sdk.a)
