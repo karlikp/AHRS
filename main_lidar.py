@@ -1,6 +1,5 @@
 import time
 import unitree_lidar_sdk_pybind
-import sys
 
 # Create Lidar wrapper object
 lidar = unitree_lidar_sdk_pybind.UnitreeLidarWrapper()

@@ -38,7 +38,7 @@ public:
 
     static void signal_handler(int signal) {
         if (signal == SIGINT) {
-            std::cout << "\ninterrupt signal (Ctrl+C) detect. Exit...\n" << std::endl;
+            std::cout << "\nProgram interrupted\n" << std::endl;
             exit(0); 
         }
     }
@@ -71,11 +71,6 @@ public:
     py::dict get_imu_data() {
         py::dict imu_data;
 
-        //auto imu = lreader->getIMU();
-    
-        //std::cout << "IMU Data: timestamp=" << imu.stamp << ", id=" << imu.id << std::endl;  // Dodaj logowanie
-
-
         imu_data["timestamp"] = lreader->getIMU().stamp;
         imu_data["id"] = lreader->getIMU().id;
         imu_data["quaternion"] = py::make_tuple(lreader->getIMU().quaternion[0],
@@ -107,7 +102,7 @@ public:
                 return "IMU";
             case POINTCLOUD:
                 return "POINTCLOUD";
-            // Add more cases if necessary
+            
             default:
                 return "UNKNOWN";
         }
