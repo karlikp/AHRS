@@ -1,0 +1,2 @@
+BMX160 Accel X: 0, Accel Y: 0, Accel Z: 0
+

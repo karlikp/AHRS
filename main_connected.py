@@ -9,12 +9,12 @@ import threading
 import unitree_lidar_sdk_pybind
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'AHRS_package')))
-from AHRS_package import initialize_all_sensors, select_channel, read_bmx160
+from AHRS_package import *
 
 i2c = busio.I2C(board.SCL, board.SDA)
 bus = SMBus(1)
 
-sensors_vl6180x, sensors_vl53l1x, bmp388_sensor, bmx160_sensor = initialize_all_sensors(i2c, bus)
+sensors_vl6180x, sensors_vl53l1x, bmx160_sensor = sensors_init.initialize_all_sensors(i2c, bus)
 
 bmp388_temperatures = []
 bmp388_pressures = []
@@ -26,32 +26,22 @@ last_mean_calculation_time = time.time()
 
 def sensor_reading():
     global last_mean_calculation_time
+    
+    bmp388 = BMP388(i2c)
+    bmx160 = BMX160(1)
+
     try:
         while True:
             current_time = time.time()
 
-           
-            if bmp388_sensor:
-                select_channel(i2c, 0)
-                with open("data/bmp388.txt", "w") as bmp388_file:
-                    try:
-                        temperature = bmp388_sensor.temperature
-                        pressure = bmp388_sensor.pressure
-                        bmp388_file.write(f"BMP388 Temperature: {temperature:.2f} C, Pressure: {pressure:.2f} hPa\n\n")  
-                    except RuntimeError:
-                        print("BMP388 Error reading data")
+        
+            bmp388.save_to_file()
+            bmx160.save_to_file()
 
-            if bmx160_sensor:
-                select_channel(i2c, 0)
-                with open("data/bmx160.txt", "w") as bmx160_file:
-                    try:
-                        accel_x, accel_y, accel_z = read_bmx160(bus)
-                        if accel_x is not None:
-                            bmx160_file.write(f"BMX160 Accel X: {accel_x}, Accel Y: {accel_y}, Accel Z: {accel_z}\n\n")  
-                        else:
-                            print("BMX160 Error reading data")
-                    except RuntimeError:
-                        print("BMX160 Error reading data")
+
+            
+
+        
 
             for channel, sensor in sensors_vl6180x.items():
                 select_channel(i2c, channel)
@@ -96,83 +86,83 @@ def sensor_reading():
         print("Program interrupted")
 
 
-def lidar_reading():
-    lidar = unitree_lidar_sdk_pybind.UnitreeLidarWrapper()
+# def lidar_reading():
+#     lidar = unitree_lidar_sdk_pybind.UnitreeLidarWrapper()
 
-    if lidar.initialize():
-        print("Unilidar initialization succeeded.")
-    else:
-        print("Unilidar initialization failed! Exiting.")
-        exit(-1)
+#     if lidar.initialize():
+#         print("Unilidar initialization succeeded.")
+#     else:
+#         print("Unilidar initialization failed! Exiting.")
+#         return None
 
-    print("Setting Lidar working mode to: NORMAL...")
-    lidar.set_working_mode(1)  # NORMAL
-    time.sleep(1)
+#     print("Setting Lidar working mode to: NORMAL...")
+#     lidar.set_working_mode(1)  # NORMAL
+#     time.sleep(1)
 
-    open("data/dirty_percentage.txt", "w").close()
-    open("data/imu_data.txt", "w").close()
-    open("data/cloud_data.txt", "w").close()
+#     open("data/dirty_percentage.txt", "w").close()
+#     open("data/imu_data.txt", "w").close()
+#     open("data/cloud_data.txt", "w").close()
 
-    print("\nChecking dirty percentage...")
-    count_percentage = 0
+#     print("\nChecking dirty percentage...")
+#     count_percentage = 0
 
-    while True:
-        dirty_percentage = lidar.get_dirty_percentage()
-        if dirty_percentage is not None:
-            # Open the file in append mode
-            with open("data/dirty_percentage.txt", "a") as file:
-                file.write(f"Dirty Percentage = {dirty_percentage}%\n")
+#     while True:
+#         dirty_percentage = lidar.get_dirty_percentage()
+#         if dirty_percentage is not None:
+#             # Open the file in append mode
+#             with open("data/dirty_percentage.txt", "a") as file:
+#                 file.write(f"Dirty Percentage = {dirty_percentage}%\n")
 
-            if count_percentage > 2:
-                break
-            if dirty_percentage > 10:
-                print("The protection cover is too dirty! Please clean it right now! Exiting.")
-                exit(0)
-            count_percentage += 1
-        time.sleep(0.5)
+#             if count_percentage > 2:
+#                 break
+#             if dirty_percentage > 10:
+#                 print("The protection cover is too dirty! Please clean it right now! Exiting.")
+#                 exit(0)
+#             count_percentage += 1
+#         time.sleep(0.5)
 
-    print("\nParsing data (PointCloud and IMU)...")
-    while True:
-        result = lidar.check_message()
+#     print("\nParsing data (PointCloud and IMU)...")
+#     while True:
+#         result = lidar.check_message()
 
-        if result == "IMU":
-            imu_data = lidar.get_imu_data()
+#         if result == "IMU":
+#             imu_data = lidar.get_imu_data()
 
-            if imu_data:
-                imu_output = (
-                    f"Timestamp: {imu_data['timestamp']}, ID: {imu_data['id']}\n"
-                    f"Quaternion: {imu_data['quaternion']}\n"
-                    f"Time delay (us): {imu_data['time_delay']}\n\n"
-                )
+#             if imu_data:
+#                 imu_output = (
+#                     f"Timestamp: {imu_data['timestamp']}, ID: {imu_data['id']}\n"
+#                     f"Quaternion: {imu_data['quaternion']}\n"
+#                     f"Time delay (us): {imu_data['time_delay']}\n\n"
+#                 )
 
-                with open("data/imu_data.txt", "w") as imu_file:
-                    imu_file.write(imu_output)
-            else:
-                print("No IMU data received.")
+#                 with open("data/imu_data.txt", "w") as imu_file:
+#                     imu_file.write(imu_output)
+#             else:
+#                 print("No IMU data received.")
 
-        elif result == "POINTCLOUD":
-            cloud_data = lidar.get_cloud_data()
+#         elif result == "POINTCLOUD":
+#             cloud_data = lidar.get_cloud_data()
 
-            cloud_output = (
-                f"Timestamp: {cloud_data['timestamp']}, ID: {cloud_data['id']}\n"
-                f"Cloud size: {len(cloud_data['points'])}, Ring Num: {cloud_data['ring_num']}\n"
-                "All points:\n"
-            )
+#             cloud_output = (
+#                 f"Timestamp: {cloud_data['timestamp']}, ID: {cloud_data['id']}\n"
+#                 f"Cloud size: {len(cloud_data['points'])}, Ring Num: {cloud_data['ring_num']}\n"
+#                 "All points:\n"
+#             )
 
-            for point in cloud_data['points']:
-                cloud_output += f"\t{point}\n"
+#             for point in cloud_data['points']:
+#                 cloud_output += f"\t{point}\n"
 
-            with open("data/cloud_data.txt", "w") as cloud_file:
-                cloud_file.write(cloud_output)
+#             with open("data/cloud_data.txt", "w") as cloud_file:
+#                 cloud_file.write(cloud_output)
 
 
 if __name__ == "__main__":
     
     sensor_thread = threading.Thread(target=sensor_reading)
-    lidar_thread = threading.Thread(target=lidar_reading)
+    #lidar_thread = threading.Thread(target=lidar_reading)
 
     sensor_thread.start()
-    lidar_thread.start()
+    #lidar_thread.start()
 
     sensor_thread.join()
-    lidar_thread.join()
+    #lidar_thread.join()
