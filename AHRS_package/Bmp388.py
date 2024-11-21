@@ -1,11 +1,9 @@
 from adafruit_bmp3xx import BMP3XX_I2C
-from .i2c_mux import select_channel
+from .Mux_i2c import select_channel
 
-class BMP388:
-     sensor = None
-     i2c = None
+class Bmp388:
      channel = 0
-     
+  
      def __init__(self, i_i2c):
           self.i2c = i_i2c
           select_channel(self.i2c, self.channel)

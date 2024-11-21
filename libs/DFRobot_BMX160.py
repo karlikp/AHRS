@@ -9,8 +9,8 @@
   @date  2021-10-20
   @url https://github.com/DFRobot/DFRobot_BMX160
  '''
-import sys
-sys.path.append('../')
+#import sys
+#sys.path.append('../')
 import smbus
 import time
 

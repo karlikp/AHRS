@@ -1,0 +1,3 @@
+Mean Vl6180X Channel 1 Distance: 23.07 mm
+Mean Vl6180X Channel 2 Distance: 236.92 mm
+Mean Vl6180X Channel 3 Distance: 255.00 mm

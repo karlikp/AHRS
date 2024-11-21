@@ -3,7 +3,6 @@ import os
 import time
 import board
 import busio
-import statistics
 from smbus2 import SMBus  
 import threading
 import unitree_lidar_sdk_pybind
@@ -14,7 +13,7 @@ from AHRS_package import *
 i2c = busio.I2C(board.SCL, board.SDA)
 bus = SMBus(1)
 
-sensors_vl6180x, sensors_vl53l1x, bmx160_sensor = sensors_init.initialize_all_sensors(i2c, bus)
+#sensors_vl6180x, sensors_vl53l1x, bmx160_sensor = sensors_init.initialize_all_sensors(i2c, bus)
 
 bmp388_temperatures = []
 bmp388_pressures = []
@@ -27,8 +26,10 @@ last_mean_calculation_time = time.time()
 def sensor_reading():
     global last_mean_calculation_time
     
-    bmp388 = BMP388(i2c)
-    bmx160 = BMX160(1)
+    bmp388 = Bmp388(i2c)
+    bmx160 = Bmx160(1)
+    vl6180x = Vl6180x(i2c)
+    vl53l1x = Vl53l1x(i2c)
 
     try:
         while True:
@@ -38,48 +39,52 @@ def sensor_reading():
             bmp388.save_to_file()
             bmx160.save_to_file()
 
+            vl6180x.collect_data()
+            vl53l1x.collect_data()
 
-            
+            # for channel, sensor in sensors_vl6180x.items():
+            #     select_channel(i2c, channel)
+            #     try:
+            #         distance = sensor.range
+            #         if channel not in vl6180x_distances:
+            #             vl6180x_distances[channel] = []
+            #         vl6180x_distances[channel].append(distance)
+            #     except RuntimeError:
+            #         print(f"Channel {channel}, VL6180X Error reading distance")
 
-        
+            # for channel, sensor in sensors_vl53l1x.items():
+            #     select_channel(i2c, channel)
+            #     try:
+            #         distance = sensor.distance
+            #         if distance is not None:
+            #             distance = distance * 10  # Convert to mm
+            #         if channel not in vl53l1x_distances:
+            #             vl53l1x_distances[channel] = []
+            #         vl53l1x_distances[channel].append(distance)
+            #     except RuntimeError:
+            #         print(f"Channel {channel}, VL53L1X Error reading distance")
 
-            for channel, sensor in sensors_vl6180x.items():
-                select_channel(i2c, channel)
-                try:
-                    distance = sensor.range
-                    if channel not in vl6180x_distances:
-                        vl6180x_distances[channel] = []
-                    vl6180x_distances[channel].append(distance)
-                except RuntimeError:
-                    print(f"Channel {channel}, VL6180X Error reading distance")
 
-            for channel, sensor in sensors_vl53l1x.items():
-                select_channel(i2c, channel)
-                try:
-                    distance = sensor.distance
-                    if distance is not None:
-                        distance = distance * 10  # Convert to mm
-                    if channel not in vl53l1x_distances:
-                        vl53l1x_distances[channel] = []
-                    vl53l1x_distances[channel].append(distance)
-                except RuntimeError:
-                    print(f"Channel {channel}, VL53L1X Error reading distance")
 
             if current_time - last_mean_calculation_time >= 0.25:
-                with open("data/distance.txt", "w") as distance_file:
-                    for channel, distances in vl6180x_distances.items():
-                        distances = [d for d in distances if d is not None]  # Remove None values
-                        if distances:
-                            mean_distance = statistics.mean(distances)
-                            distance_file.write(f"Mean Vl6180X Channel {channel} Distance: {mean_distance:.2f} mm\n")
-                            distances.clear()
+            
+                vl6180x.save_to_file()
+                vl53l1x.save_to_file()
 
-                    for channel, distances in vl53l1x_distances.items():
-                        distances = [d for d in distances if d is not None]
-                        if distances:
-                            mean_distance = statistics.mean(distances)
-                            distance_file.write(f"Mean VL53L1X Channel {channel} Distance: {mean_distance:.2f} mm\n")
-                            distances.clear()
+                # with open("data/distance.txt", "w") as distance_file:
+                #     for channel, distances in vl6180x_distances.items():
+                #         distances = [d for d in distances if d is not None]  # Remove None values
+                #         if distances:
+                #             mean_distance = statistics.mean(distances)
+                #             distance_file.write(f"Mean Vl6180X Channel {channel} Distance: {mean_distance:.2f} mm\n")
+                #             distances.clear()
+
+                    # for channel, distances in vl53l1x_distances.items():
+                    #     distances = [d for d in distances if d is not None]
+                    #     if distances:
+                    #         mean_distance = statistics.mean(distances)
+                    #         distance_file.write(f"Mean VL53L1X Channel {channel} Distance: {mean_distance:.2f} mm\n")
+                    #         distances.clear()
 
                 last_mean_calculation_time = current_time
     except KeyboardInterrupt:

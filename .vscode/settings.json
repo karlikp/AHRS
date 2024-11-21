@@ -68,5 +68,11 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp"
-    }
+    },
+
+    
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/../libs"
+    ]
+    
 }

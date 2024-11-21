@@ -1,6 +1,6 @@
 from smbus2 import SMBus
-from .vl6180x_module import initialize_vl6180x
-from .vl53l1x_module import initialize_vl53l1x
+from .Vl6180x import initialize_vl6180x
+from .Vl53l1x import initialize_vl53l1x
 #from .bmp388_module import initialize_bmp388
 from .bmx160_module import initialize_bmx160
 
