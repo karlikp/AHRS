@@ -1,2 +1,1 @@
-BMX160 Accel X: 0, Accel Y: 0, Accel Z: 0
-
+magn: x: -90.90 uT, y: 26.70 uT, z: -102.90 uTgyro  x: 0.04 g, y: -0.02 g, z: -0.06 gaccel x: -0.75 m/s^2, y: -1.54 m/s^2, z: 9.93 m/s^2

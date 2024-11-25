@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Debug main_connected.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_connected.py",  // Ścieżka do głównego pliku
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

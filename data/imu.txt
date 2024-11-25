@@ -1,1 +1,0 @@
-magn: x: 0.00 uT, y: 0.00 uT, z: 0.00 uTgyro  x: 0.00 g, y: 0.00 g, z: 0.00 gaccel x: 0.00 m/s^2, y: 0.00 m/s^2, z: 0.00 m/s^2

@@ -21,31 +21,7 @@ class Vl6180x:
             except (ValueError, OSError, RuntimeError):
                 print(f"No VL6180X on channel {channel}")
         
-    # def initialize_vl6180x(i2c, channels):
-    #     sensors_vl6180x = {}
-    #     for channel in channels:
-    #         select_channel(i2c, channel)
-    #         try:
-    #             sensor = VL6180X(i2c)
-    #             sensor.range  # check if work
-    #             sensors_vl6180x[channel] = sensor
-    #             print(f"VL6180X detected on channel {channel}")
-    #         except (ValueError, OSError, RuntimeError):
-    #             print(f"No VL6180X on channel {channel}")
-    #     return sensors_vl6180x
     
-
-    # for channel, sensor in sensors_vl6180x.items():
-    #             select_channel(i2c, channel)
-    #             try:
-    #                 distance = sensor.range
-    #                 if channel not in vl6180x_distances:
-    #                     vl6180x_distances[channel] = []
-    #                 vl6180x_distances[channel].append(distance)
-    #             except RuntimeError:
-    #                 print(f"Channel {channel}, VL6180X Error reading distance")
-
-
     def collect_data(self):
         for channel, sensor in self.sensors.items():
             select_channel(self.i2c, channel)
@@ -64,4 +40,4 @@ class Vl6180x:
                 if distances:
                     mean_distance = statistics.mean(distances)
                     distance_file.write(f"Mean Vl6180X Channel {channel} Distance: {mean_distance:.2f} mm\n")
-                    distances.clear()
+        self.distances.clear()

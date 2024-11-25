@@ -3,6 +3,7 @@ from adafruit_vl53l1x import VL53L1X
 from .Mux_i2c import select_channel
 
 
+
 class Vl53l1x:
     sensors = {}
     channels = [4, 5, 6]
@@ -13,8 +14,9 @@ class Vl53l1x:
             for channel in self.channels:
                 select_channel(self.i2c, channel)
                 try:
-                    sensor = VL53L1X(i2c)
-                    sensor.distance
+                    sensor = VL53L1X(self.i2c)
+                    sensor.start_ranging() 
+                    # Try read range to check sensor working
                     self.sensors[channel] = sensor
                     print(f"VL53L1X on channel {channel}")
                 except (ValueError, OSError, RuntimeError):
@@ -27,6 +29,8 @@ class Vl53l1x:
                     distance = sensor.distance
                     if distance is not None:
                         distance = distance * 10  # Convert to mm
+                    else:
+                        distance = 3500
                     if channel not in self.distances:
                         self.distances[channel] = []
                     self.distances[channel].append(distance)
@@ -34,11 +38,12 @@ class Vl53l1x:
                     print(f"Channel {channel}, VL53L1X Error reading distance")
 
     def save_to_file(self):
+
         with open("/home/karol/Desktop/repos/SLAM/data/vl53l1x.txt", "w") as distance_file:
             for channel, distances in self.distances.items():
                 distances = [d for d in distances if d is not None]  # Remove None values
                 if distances:
                     mean_distance = statistics.mean(distances)
                     distance_file.write(f"Mean VL53L1X Channel {channel} Distance: {mean_distance:.2f} mm\n")
-                    distances.clear()
+        self.distances.clear()
         
