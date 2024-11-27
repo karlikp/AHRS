@@ -6,8 +6,8 @@ import busio
 from smbus2 import SMBus  
 import threading
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'sensor_modules')))
-from sensor_modules import *
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'module')))
+from module import *
 
 i2c = busio.I2C(board.SCL, board.SDA)
 bus = SMBus(1)
@@ -52,8 +52,10 @@ def lidar_reading():
     while lidar.get_ready_to_work() :
 
         lidar.check_dirty()
-        lidar.open_file()
         lidar.parsing_data()
+
+#def MQTT_sending():
+    
     
     
 
@@ -61,9 +63,12 @@ if __name__ == "__main__":
     
     sensor_thread = threading.Thread(target=sensor_reading)
     lidar_thread = threading.Thread(target=lidar_reading)
+    #MQTT_thread = threading.Thread(target=MQTT_sending)
 
     sensor_thread.start()
     lidar_thread.start()
+    #MQTT_thread.start()
 
     sensor_thread.join()
     lidar_thread.join()
+    #MQTT_thread.join()

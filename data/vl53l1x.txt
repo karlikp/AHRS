@@ -1,3 +1,0 @@
-Mean VL53L1X Channel 4 Distance: 3500.00 mm
-Mean VL53L1X Channel 5 Distance: 3647.00 mm
-Mean VL53L1X Channel 6 Distance: 3610.50 mm

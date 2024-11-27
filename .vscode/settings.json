@@ -72,7 +72,7 @@
 
     
     "python.analysis.extraPaths": [
-        "${workspaceFolder}/../libs"
+        "${workspaceFolder}/libs"
     ]
     
 }
