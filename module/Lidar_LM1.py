@@ -10,39 +10,39 @@ class Lidar_LM1:
         self.open_file()
         time.sleep(1)
 
-        self.ready_to_work = False
+        #self.ready_to_work = False
 
     def check_init(self):
         if self.lidar.initialize():
             print("Unilidar initialization succeeded.")
-            self.ready_to_work = True
+            #self.ready_to_work = True
         else:
             print("Unilidar initialization failed! Exiting.")
 
     def check_dirty(self):
         count_percentage = 0
         while True:
-            dirty_percentage = self.lidar.get_dirty_percentage()
-            if dirty_percentage is not None:
+            lidar_dirty = self.lidar.get_dirty_percentage()
+            if lidar_dirty is not None:
                 # Open the file in append mode
-                with open("/home/karol/Desktop/repos/SLAM/data/package/dirty_percentage.txt", "a") as file:
-                    file.write(f"Dirty Percentage = {dirty_percentage}%\n")
+                with open("/home/karol/Desktop/repos/SLAM/data/package/lidar_dirty.txt", "a") as file:
+                    file.write(f"Dirty Percentage = {lidar_dirty}%\n")
 
                 if count_percentage > 2:
                     break
-                if dirty_percentage > 10:
+                if lidar_dirty > 10:
                     print("The protection cover is too dirty! Please clean it right now! Exiting.")
                     exit(0)
                 count_percentage += 1
             time.sleep(0.5)
 
     def open_file(self):
-        open("/home/karol/Desktop/repos/SLAM/data/current/imu_data.txt", "w").close()
-        open("/home/karol/Desktop/repos/SLAM/data/current/cloud_data.txt", "w").close()
+        open("/home/karol/Desktop/repos/SLAM/data/current/lidar_imu.txt", "w").close()
+        open("/home/karol/Desktop/repos/SLAM/data/current/lidar_cloud.txt", "w").close()
 
-        open("/home/karol/Desktop/repos/SLAM/data/package/dirty_percentage.txt", "w").close()
-        open("/home/karol/Desktop/repos/SLAM/data/package/imu_data.txt", "w").close()
-        open("/home/karol/Desktop/repos/SLAM/data/package/cloud_data.txt", "w").close()
+        open("/home/karol/Desktop/repos/SLAM/data/package/lidar_dirty.txt", "w").close()
+        open("/home/karol/Desktop/repos/SLAM/data/package/lidar_imu.txt", "w").close()
+        open("/home/karol/Desktop/repos/SLAM/data/package/lidar_cloud.txt", "w").close()
 
     def parsing_data(self):
         print("\nParsing data (PointCloud and IMU)...")
@@ -51,17 +51,17 @@ class Lidar_LM1:
             result = self.lidar.check_message()
 
             if result == "IMU":
-                imu_data = self.lidar.get_imu_data()
+                lidar_imu = self.lidar.get_imu_data()
 
-                if imu_data:
+                if lidar_imu:
                     imu_output = (
-                        f"Timestamp: {imu_data['timestamp']}, ID: {imu_data['id']}\n"
-                        f"Quaternion: {imu_data['quaternion']}\n"
-                        f"Time delay (us): {imu_data['time_delay']}\n\n"
+                        f"Timestamp: {lidar_imu['timestamp']}, ID: {lidar_imu['id']}\n"
+                        f"Quaternion: {lidar_imu['quaternion']}\n"
+                        f"Time delay (us): {lidar_imu['time_delay']}\n\n"
                     )
 
-                    file_path1 = "/home/karol/Desktop/repos/SLAM/data/current/imu_data.txt"
-                    file_path2 = "/home/karol/Desktop/repos/SLAM/data/current/imu_data_additional.txt"
+                    file_path1 = "/home/karol/Desktop/repos/SLAM/data/current/lidar_imu.txt"
+                    file_path2 = "/home/karol/Desktop/repos/SLAM/data/package/lidar_imu.txt"
 
                     with open(file_path1, "w") as imu_file1, open(file_path2, "a") as imu_file2:
                         imu_file1.write(imu_output)
@@ -70,19 +70,23 @@ class Lidar_LM1:
                     print("No IMU data received.")
 
             elif result == "POINTCLOUD":
-                cloud_data = self.lidar.get_cloud_data()
+                lidar_cloud = self.lidar.get_cloud_data()
 
                 cloud_output = (
-                    f"Timestamp: {cloud_data['timestamp']}, ID: {cloud_data['id']}\n"
-                    f"Cloud size: {len(cloud_data['points'])}, Ring Num: {cloud_data['ring_num']}\n"
+                    f"Timestamp: {lidar_cloud['timestamp']}, ID: {lidar_cloud['id']}\n"
+                    f"Cloud size: {len(lidar_cloud['points'])}, Ring Num: {lidar_cloud['ring_num']}\n"
                     "All points:\n"
                 )
 
-                for point in cloud_data['points']:
+                for point in lidar_cloud['points']:
                     cloud_output += f"\t{point}\n"
 
-                with open("/home/karol/Desktop/repos/SLAM/data/current/cloud_data.txt", "w") as cloud_file:
-                    cloud_file.write(cloud_output)
+                file_path1 = "/home/karol/Desktop/repos/SLAM/data/current/lidar_cloud.txt"
+                file_path2 = "/home/karol/Desktop/repos/SLAM/data/package/lidar_cloud.txt"
+
+                with open(file_path1, "w") as cloud_file1, open(file_path2, "a") as cloud_file2:
+                    cloud_file1.write(cloud_output)
+                    cloud_file2.write(cloud_output)
 
     def get_ready_to_work(self):
         return self.ready_to_work

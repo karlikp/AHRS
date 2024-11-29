@@ -49,12 +49,17 @@ def lidar_reading():
 
     lidar.check_init()
     
-    while lidar.get_ready_to_work() :
+    #while lidar.get_ready_to_work() : #ultimately exit() after error_init
 
-        lidar.check_dirty()
-        lidar.parsing_data()
+    lidar.check_dirty()
+    lidar.parsing_data()
 
-#def MQTT_sending():
+def MQTT_sending():
+
+    while True:
+        time.sleep(5)
+        get_data_from_file()
+        send_data()
     
     
     
@@ -62,13 +67,13 @@ def lidar_reading():
 if __name__ == "__main__":
     
     sensor_thread = threading.Thread(target=sensor_reading)
-    lidar_thread = threading.Thread(target=lidar_reading)
+    #lidar_thread = threading.Thread(target=lidar_reading)
     #MQTT_thread = threading.Thread(target=MQTT_sending)
 
     sensor_thread.start()
-    lidar_thread.start()
+    #lidar_thread.start()
     #MQTT_thread.start()
 
     sensor_thread.join()
-    lidar_thread.join()
+    #lidar_thread.join()
     #MQTT_thread.join()

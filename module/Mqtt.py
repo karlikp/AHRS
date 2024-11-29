@@ -2,8 +2,8 @@ import paho.mqtt.client as mqtt
 import base64
 import os
 
-class MqttFileSender:
-    def __init__(self, broker, port=1883, topic="file_transfer/topic", client_id=None):
+class Mqtt:
+    def __init__(self, broker, file_path, topic, port=1883, client_id=None):
         """
         Initializes the object for sending files via MQTT.
         
@@ -12,11 +12,13 @@ class MqttFileSender:
         :param topic: The topic to which files will be sent.
         :param client_id: Optionally, a unique client identifier.
         """
+        self.file_path = file_path
         self.broker = broker
         self.port = port
         self.topic = topic
         self.client_id = client_id or f"mqtt_client_{os.getpid()}"
         self.client = mqtt.Client(client_id=self.client_id)
+        
 
         # Set the callback for connection
         self.client.on_connect = self.on_connect
@@ -62,14 +64,17 @@ class MqttFileSender:
         except Exception as e:
             print(f"Error connecting to the broker: {e}")
 
+    def get_file_path():
+        return file_path
+
 # Example usage of the class
 if __name__ == "__main__":
-    # Create an instance of the MqttFileSender class
-    sender = MqttFileSender(broker="mqtt.eclipse.org", topic="file_transfer/topic")
+    # Create an instance of the Mqtt class
+    sender = Mqtt(broker="mqtt.eclipse.org", topic="file_transfer/topic")
 
     # Connect to the MQTT broker and send the file
     sender.connect()
 
     # Path to the file to be sent
-    file_path = "path_to_your_file.txt"  # Change to the appropriate file path
+    file_path = "/home/karol/Desktop/repos/SLAM/data/package/bmp388.txt"  # Change to the appropriate file path
     sender.send_file(file_path)
