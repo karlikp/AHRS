@@ -1,6 +1,0 @@
-Channel 1 Distance: 51.00 mm
-Channel 2 Distance: 159.00 mm
-Channel 3 Distance: 125.00 mm
-Channel 4 Distance: 3500.00 mm
-Channel 5 Distance: 3232.00 mm
-Channel 6 Distance: 3500.00 mm

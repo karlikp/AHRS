@@ -2,13 +2,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Debug main_connected.py",
+            "name": "Python: Debug main.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main_connected.py",  // Ścieżka do głównego pliku
+            "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/unitree_lidar_sdk_pybind:${workspaceFolder}/lib"
+            
+            }
         }
     ]
 }

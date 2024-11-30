@@ -1,2 +1,2 @@
-BMP388 Temperature: 23.00 C, Pressure: 1003.94 hPa
+BMP388 Temperature: 23.33 C, Pressure: 1005.46 hPa
 

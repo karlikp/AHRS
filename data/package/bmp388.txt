@@ -1,34 +1,4 @@
-BMP388 Temperature: 23.00 C, Pressure: 1003.93 hPa
+BMP388 Temperature: 23.33 C, Pressure: 1005.42 hPa
 
-BMP388 Temperature: 23.00 C, Pressure: 1003.96 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.97 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.90 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.98 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1004.01 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1004.06 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.97 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.92 hPa
-
-BMP388 Temperature: 22.99 C, Pressure: 1004.00 hPa
-
-BMP388 Temperature: 22.99 C, Pressure: 1004.02 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.99 hPa
-
-BMP388 Temperature: 22.99 C, Pressure: 1004.06 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.98 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.85 hPa
-
-BMP388 Temperature: 22.99 C, Pressure: 1004.00 hPa
-
-BMP388 Temperature: 23.00 C, Pressure: 1003.94 hPa
+BMP388 Temperature: 23.33 C, Pressure: 1005.46 hPa
 

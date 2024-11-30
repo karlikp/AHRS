@@ -20,6 +20,7 @@ vl53l1x = Vl53l1x(i2c)
 lidar = Lidar_LM1()
 
 last_mean_calculation_time = time.time()
+lidar_is_dirty = False
 
 def sensor_reading():
     global last_mean_calculation_time
@@ -48,10 +49,8 @@ def sensor_reading():
 def lidar_reading():
 
     lidar.check_init()
-    
-    #while lidar.get_ready_to_work() : #ultimately exit() after error_init
-
     lidar.check_dirty()
+    lidar_is_dirty = lidar.get_is_dirty()
     lidar.parsing_data()
 
 def MQTT_sending():
@@ -67,13 +66,16 @@ def MQTT_sending():
 if __name__ == "__main__":
     
     sensor_thread = threading.Thread(target=sensor_reading)
-    #lidar_thread = threading.Thread(target=lidar_reading)
+    lidar_thread = threading.Thread(target=lidar_reading)
     #MQTT_thread = threading.Thread(target=MQTT_sending)
 
     sensor_thread.start()
-    #lidar_thread.start()
+    lidar_thread.start()
+
+    if lidar_is_dirty:
+        exit()
     #MQTT_thread.start()
 
     sensor_thread.join()
-    #lidar_thread.join()
+    lidar_thread.join()
     #MQTT_thread.join()

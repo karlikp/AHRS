@@ -70,9 +70,8 @@
         "variant": "cpp"
     },
 
-    
-    "python.analysis.extraPaths": [
-        "${workspaceFolder}/libs"
+       "python.analysis.extraPaths": [
+        "${workspaceFolder}/lib",
+        "${workspaceFolder}/unitree_lidar_sdk_pybind"
     ]
-    
 }
