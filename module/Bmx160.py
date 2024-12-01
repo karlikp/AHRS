@@ -13,14 +13,16 @@ class Bmx160:
 
     def __init__(self, bus):
         self.sensor = BMX160(1)
-        #self.i2cbus = smbus.SMBus(bus)
-        #self.i2c_addr = 0x68
+        self.i2cbus = smbus.SMBus(bus)
+        self.i2c_addr = 0x68
+        while not self.sensor.begin():
+            time.sleep(2)
         open("/home/karol/Desktop/repos/SLAM/data/current/bmx160.txt", "w").close()
         open("/home/karol/Desktop/repos/SLAM/data/package/bmx160.txt", "w").close()
 
     def save_to_file(self):
         data = self.sensor.get_all_data()
-        time.sleep(1)
+        #time.sleep(1)
 
         file_path1 = "/home/karol/Desktop/repos/SLAM/data/current/bmx160.txt"
         file_path2 = "/home/karol/Desktop/repos/SLAM/data/package/bmx160.txt"

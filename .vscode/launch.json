@@ -10,7 +10,7 @@
             "justMyCode": false,
             "cwd": "${workspaceFolder}",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/unitree_lidar_sdk_pybind:${workspaceFolder}/lib"
+                "PYTHONPATH": "${workspaceFolder}/unitree_lidar_sdk_pybind:${workspaceFolder}/lib:${workspaceFolder}/${workspaceFolder}/*"
             
             }
         }

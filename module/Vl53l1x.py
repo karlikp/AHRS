@@ -40,8 +40,8 @@ class Vl53l1x:
 
     def save_to_file(self):
 
-        file_path1 = "/home/karol/Desktop/repos/SLAM/data/current/distance.txt"
-        file_path2 = "/home/karol/Desktop/repos/SLAM/data/package/distance.txt"
+        file_path1 = "/home/karol/Desktop/repos/SLAM/data/current/distances.txt"
+        file_path2 = "/home/karol/Desktop/repos/SLAM/data/package/distances.txt"
 
         with open(file_path1, "a") as distance_file1, open(file_path2, "a") as distance_file2:
             for channel, distances in self.distances.items():

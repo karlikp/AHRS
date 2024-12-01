@@ -31,26 +31,27 @@ class Mqtt:
         :param flags: Connection flags.
         :param rc: The connection return code.
         """
-        print(f"Connected to the MQTT broker. Return code: {rc}")
-        # After connection, start sending the file
         self.send_file()
 
-    def send_file(self, file_path):
+    def send_file(self, chunk_size=256*1024):  # Domyślnie 256 KB na fragment
         """
-        Sends a file via MQTT in base64 format.
+        Sends a file via MQTT in chunks in base64 format.
         
-        :param file_path: Path to the file to be sent.
+        :param chunk_size: Size of each chunk in bytes.
         """
-        try:
-            # Open the file in binary mode and convert it to base64
-            with open(file_path, "rb") as file:
-                file_data = file.read()
-                encoded_file = base64.b64encode(file_data).decode('utf-8')  # Convert to base64
-                print(f"File '{file_path}' encoded to base64.")
+        if not os.path.exists(self.file_path):
+            print(f"Error: File '{self.file_path}' does not exist.")
+            return
 
-            # Send the encoded data via MQTT
-            self.client.publish(self.topic, encoded_file)
-            print(f"File has been sent to topic: {self.topic}")
+        try:
+            with open(self.file_path, "rb") as file:
+                chunk_index = 0
+                while chunk := file.read(chunk_size):  # Czytaj plik w kawałkach
+                    encoded_chunk = base64.b64encode(chunk).decode('utf-8')  # Koduj fragment
+                    self.client.publish(self.topic, encoded_chunk)  # Wyślij fragment
+                    #print(f"Sent chunk {chunk_index} of size {len(chunk)} bytes.")
+                    chunk_index += 1
+            print(f"File has been sent in chunks on {self.topic}")
         except Exception as e:
             print(f"Error sending the file: {e}")
 
@@ -60,21 +61,24 @@ class Mqtt:
         """
         try:
             self.client.connect(self.broker, self.port, 60)
-            self.client.loop_start()  # Start the communication loop
+            #self.client.loop_start()  # Start the communication loop
         except Exception as e:
             print(f"Error connecting to the broker: {e}")
+        
+    def clear_file(self):
+        open(self.file_path, "w").close()
 
-    def get_file_path():
-        return file_path
+    def get_file_path(self):
+        return self.file_path
 
-# Example usage of the class
-if __name__ == "__main__":
-    # Create an instance of the Mqtt class
-    sender = Mqtt(broker="mqtt.eclipse.org", topic="file_transfer/topic")
+# # Example usage of the class
+# if __name__ == "__main__":
+#     # Create an instance of the Mqtt class
+#     sender = Mqtt(broker="mqtt.eclipse.org", topic="file_transfer/topic")
 
-    # Connect to the MQTT broker and send the file
-    sender.connect()
+#     # Connect to the MQTT broker and send the file
+#     sender.connect()
 
-    # Path to the file to be sent
-    file_path = "/home/karol/Desktop/repos/SLAM/data/package/bmp388.txt"  # Change to the appropriate file path
-    sender.send_file(file_path)
+#     # Path to the file to be sent
+#     file_path = "/home/karol/Desktop/repos/SLAM/data/package/bmp388.txt"  # Change to the appropriate file path
+#     sender.send_file(file_path)
