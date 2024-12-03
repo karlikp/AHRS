@@ -54,12 +54,7 @@ def lidar_reading():
     lidar_is_dirty = lidar.get_is_dirty()
     lidar.parsing_data()
 
-#def MQTT_sending():
-#      send_package()
     
-    
-    
-
 if __name__ == "__main__":
     
     sensor_thread = threading.Thread(target=sensor_reading)

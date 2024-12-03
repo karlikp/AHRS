@@ -1,5 +1,4 @@
 import paho.mqtt.client as mqtt
-import base64
 import os
 
 class Mqtt:
@@ -47,8 +46,8 @@ class Mqtt:
             with open(self.file_path, "rb") as file:
                 chunk_index = 0
                 while chunk := file.read(chunk_size):  # Czytaj plik w kawałkach
-                    encoded_chunk = base64.b64encode(chunk).decode('utf-8')  # Koduj fragment
-                    self.client.publish(self.topic, encoded_chunk)  # Wyślij fragment
+                    #encoded_chunk = base64.b64encode(chunk).decode('utf-8')  # Koduj fragment
+                    self.client.publish(self.topic, chunk)  # Wyślij fragment
                     #print(f"Sent chunk {chunk_index} of size {len(chunk)} bytes.")
                     chunk_index += 1
             print(f"File has been sent in chunks on {self.topic}")
@@ -70,15 +69,3 @@ class Mqtt:
 
     def get_file_path(self):
         return self.file_path
-
-# # Example usage of the class
-# if __name__ == "__main__":
-#     # Create an instance of the Mqtt class
-#     sender = Mqtt(broker="mqtt.eclipse.org", topic="file_transfer/topic")
-
-#     # Connect to the MQTT broker and send the file
-#     sender.connect()
-
-#     # Path to the file to be sent
-#     file_path = "/home/karol/Desktop/repos/SLAM/data/package/bmp388.txt"  # Change to the appropriate file path
-#     sender.send_file(file_path)
