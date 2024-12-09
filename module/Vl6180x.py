@@ -1,6 +1,8 @@
 import statistics
+import struct
 from adafruit_vl6180x import VL6180X
 from .Mux_i2c import select_channel
+import queue
 import sys
 sys.path.append('../')
 
@@ -11,9 +13,11 @@ class Vl6180x:
 
     def __init__(self, i2c):
         self.i2c = i2c
-
-        open("/home/karol/Desktop/repos/SLAM/data/current/distances.txt", "w").close()
-        open("/home/karol/Desktop/repos/SLAM/data/package/distances.txt", "w").close()
+        self.sensors = {}
+        self.channels = [1, 2, 3]
+        self.distances = {}
+        self.data_queue = queue.Queue() 
+        self.topic = "AHRS/vl6180x"
 
         for channel in self.channels:
             select_channel(self.i2c, channel)
@@ -25,6 +29,8 @@ class Vl6180x:
             except (ValueError, OSError, RuntimeError):
                 print(f"No VL6180X on channel {channel}")
         
+    def get_topic(self):
+        return self.topic
     
     def collect_data(self):
         for channel, sensor in self.sensors.items():
@@ -37,21 +43,25 @@ class Vl6180x:
             except RuntimeError:
                 print(f"Channel {channel}, VL6180X Error reading distance")
 
-    def save_to_file(self):
-    
-        file_path1 = "/home/karol/Desktop/repos/SLAM/data/current/distances.txt"
-        file_path2 = "/home/karol/Desktop/repos/SLAM/data/package/distances.txt"
+    def save_to_queue(self):
+        for channel, distances in self.distances.items():
+            distances = [d for d in distances if d is not None]
 
-        with open(file_path1, "w") as distance_file1, open(file_path2, "a") as distance_file2:
-            for channel, distances in self.distances.items():
-                
-                distances = [d for d in distances if d is not None]
-                
-                if distances:
-                    mean_distance = statistics.mean(distances)
-                
-                    distance_file1.write(f"Channel {channel} Distance: {mean_distance:.2f} mm\n")
-                    distance_file2.write(f"Channel {channel} Distance: {mean_distance:.2f} mm\n")
+            if distances:
+                mean_distance = statistics.mean(distances)
+                data_list = [channel, round(mean_distance, 2)]
+
+                # Convert to bytearray
+                data_to_queue = bytearray(struct.pack('If', data_list[0], data_list[1]))
+                self.data_queue.put(data_to_queue)  
+                #print(f"Queued data: {data_to_queue}")
 
         self.distances.clear()
+
+    def get_data_from_queue(self):
+        if not self.data_queue.empty():
+            return self.data_queue.get()
+        else:
+            print("\nEmpty queue VL6180X")
+            return None
 

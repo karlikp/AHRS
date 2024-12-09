@@ -1,10 +1,8 @@
 import sys
-import os
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'libs')))
+import queue
 sys.path.append('/home/karol/Desktop/repos/SLAM/lib')
-#sys.path.append('../')
 
-
+import struct
 from lib.DFRobot_BMX160 import BMX160
 import smbus
 import time
@@ -15,28 +13,34 @@ class Bmx160:
         self.sensor = BMX160(1)
         self.i2cbus = smbus.SMBus(bus)
         self.i2c_addr = 0x68
+        self.data_queue = queue.Queue() 
+        self.topic = "AHRS/bmx160"
+
         while not self.sensor.begin():
             time.sleep(2)
-        open("/home/karol/Desktop/repos/SLAM/data/current/bmx160.txt", "w").close()
-        open("/home/karol/Desktop/repos/SLAM/data/package/bmx160.txt", "w").close()
 
-    def save_to_file(self):
-        data = self.sensor.get_all_data()
-        #time.sleep(1)
+    def get_topic(self):
+        return self.topic
+    
+    def save_to_queue(self):
+            try:
+                data = self.sensor.get_all_data()
 
-        file_path1 = "/home/karol/Desktop/repos/SLAM/data/current/bmx160.txt"
-        file_path2 = "/home/karol/Desktop/repos/SLAM/data/package/bmx160.txt"
+                imu_data = [round(data[0], 2), round(data[1], 2), round(data[2], 2),               #magnetomert: xyz
+                    round(data[3], 2), round(data[4], 2), round(data[5], 2),                       #gyroscope: xyz
+                    round(data[6], 2), round(data[7], 2), round(data[8], 2)]                       #accelerometer: xyz
+                
+                #`bytearray`(format: 9 floatów)
+                packed_data = bytearray(struct.pack('9f', *imu_data))
 
-        try:
-            imu_data = f"magn: x: {data[0]:.2f} uT, y: {data[1]:.2f} uT, z: {data[2]:.2f} uT\n"
-            imu_data += f"gyro  x: {data[3]:.2f} g, y: {data[4]:.2f} g, z: {data[5]:.2f} g\n"
-            imu_data += f"accel x: {data[6]:.2f} m/s^2, y: {data[7]:.2f} m/s^2, z: {data[8]:.2f} m/s^2\n"
+                self.data_queue.put(packed_data)
 
-            with open(file_path1, "w") as imu_file1, open(file_path2, "a") as imu_file2:
-                imu_file1.write(imu_data)
-                imu_file2.write(imu_data)
-        except Exception as e:
-            print(f"Error while saving BMX160 data: {e}")
-                    
-        except RuntimeError:
-            print("BMP388 Error reading data")
+            except Exception as e:
+                print(f"Error while saving BMX160 data to queue: {e}")
+
+    def get_data_from_queue(self):
+        if not self.data_queue.empty():
+            return self.data_queue.get()
+        else:
+            print("\nEmpty queue bmx160")
+            return None
