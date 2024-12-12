@@ -9,7 +9,8 @@ from module.Mqtt_module import Mqtt
 class Lidar_LM1:
 
     imu_queue = queue.Queue()
-    cloud_queue = queue.Queue()
+    mqtt_cloud_queue = queue.Queue()
+    slam_cloud_queue = queue.Queue()
     dirty_queue = queue.Queue()
 
     def __init__(self):
@@ -62,10 +63,10 @@ class Lidar_LM1:
 
                 if lidar_imu:
                     #Output data: 1)Timestamp: Double, 2)quaternion: Table of Float
-                    packed_data = bytearray(
+                    mqtt_packed_data = bytearray(
                             struct.pack('d4f', lidar_imu['timestamp'], *lidar_imu['quaternion'])
                         )
-                    self.imu_queue.put(packed_data)         
+                    self.imu_queue.put(mqtt_packed_data)         
                 else:
                     print("No IMU data received.")
 
@@ -74,21 +75,24 @@ class Lidar_LM1:
 
                 if lidar_cloud:
                     # Output data: 1)Timestamp: Float, 2)Cloud size (amount points): Int,
-                    # 3)Points {x, y, z, intensity, time}: Float, ring: Uint32_t - 4 bytes
+                    # 3)Points {x, y, z, intensity, time}: Floats, ring: Uint32_t - 4 bytes
                     
                     points = lidar_cloud['points']
                     timestamp = lidar_cloud['timestamp']
                     
-                    packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
+                    mqtt_packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
+                    slam_packed_data = []
 
                     for point in points:
                         x, y, z, intensity, time, ring = point
-                        point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
-                        packed_data.extend(point_data)  
+                        mqtt_point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
+                        slam_point_data = [x, y, z]
+                        mqtt_packed_data.extend(mqtt_point_data)  
+                        slam_packed_data.extend(slam_point_data)
 
-                    #print(f"Saved to queue: {packed_data}")
+                    print(f"Saved to queue: {slam_packed_data}")
                     
-                    self.cloud_queue.put(packed_data)
+                    self.mqtt_cloud_queue.put(mqtt_packed_data)
                 else:
                     print("Lack of cloud points")
 
@@ -102,7 +106,7 @@ class Lidar_LM1:
 
     def get_cloud(self):
         try:
-            return self.cloud_queue.get_nowait()
+            return self.mqtt_cloud_queue.get_nowait()
         except queue.Empty:
             print("\nEmpty queue cloud")
             return None

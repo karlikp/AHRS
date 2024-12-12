@@ -42,5 +42,5 @@ class Bmx160:
         if not self.data_queue.empty():
             return self.data_queue.get()
         else:
-            print("\nEmpty queue bmx160")
+            #print("\nEmpty queue bmx160")
             return None

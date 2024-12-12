@@ -45,5 +45,5 @@ class Bmp388:
     if not self.data_queue.empty():
         return self.data_queue.get()
     else:
-        print("\nEmpty queue bmp388")
+        #print("\nEmpty queue bmp388")
         return None

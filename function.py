@@ -48,7 +48,7 @@ def send_Lidar_data(lidar, mqtt_client):
             try:
                 data = queue.get_nowait()  # Load data without block
                 mqtt_client.client.publish(topic, data)
-                #print(f"Sent data to topic {topic}: {data}")
+                print(f"Sent data to topic {topic}: {data}")
 
             except Exception as e:
                 print(f"send lidar data exception: {e}")

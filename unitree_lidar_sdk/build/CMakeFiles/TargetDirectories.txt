@@ -1,6 +1,0 @@
-/home/karol/Desktop/repos/unilidar_sdk/unitree_lidar_sdk/build/CMakeFiles/example_lidar.dir
-/home/karol/Desktop/repos/unilidar_sdk/unitree_lidar_sdk/build/CMakeFiles/example_lidar_udp.dir
-/home/karol/Desktop/repos/unilidar_sdk/unitree_lidar_sdk/build/CMakeFiles/unilidar_publisher_udp.dir
-/home/karol/Desktop/repos/unilidar_sdk/unitree_lidar_sdk/build/CMakeFiles/unilidar_subscriber_udp.dir
-/home/karol/Desktop/repos/unilidar_sdk/unitree_lidar_sdk/build/CMakeFiles/edit_cache.dir
-/home/karol/Desktop/repos/unilidar_sdk/unitree_lidar_sdk/build/CMakeFiles/rebuild_cache.dir

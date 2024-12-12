@@ -3,10 +3,10 @@
     "configurations": [
         
         {
-            "name": "Python: Debug main.py",
+            "name": "Python: Debug main_sensors.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/main_sensors.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "cwd": "${workspaceFolder}",
@@ -14,6 +14,22 @@
                 "PYTHONPATH": "${workspaceFolder}/unitree_lidar_sdk_pybind:${workspaceFolder}/lib:${workspaceFolder}/${workspaceFolder}/*"
             
             }
+        },
+        {
+
+            
+            "name": "Python: Debug main_SLAM.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_SLAM.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/unitree_lidar_sdk_pybind:${workspaceFolder}/lib:${workspaceFolder}/${workspaceFolder}/*"
+            
+            }
+            
         }
     ]
 }
