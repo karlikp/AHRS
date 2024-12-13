@@ -72,3 +72,12 @@ def send_Lidar_data(lidar, mqtt_client):
             time.sleep(1)
     except KeyboardInterrupt:
         print("Stopping data transmission...")
+
+
+def lidar_reading(lidar):
+    
+    lidar.check_init()
+    lidar.check_dirty()
+    lidar_is_dirty = lidar.get_dirty()
+    lidar.parsing_data()
+

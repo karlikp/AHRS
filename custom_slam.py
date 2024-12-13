@@ -1,20 +1,23 @@
-import time
-import threading
-import os
-import sys
+#!/usr/bin/env python3
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'module')))
-from module import *
+'''
+rpslam.py : BreezySLAM Python with SLAMTECH RP A1 Lidar
+                 
+Copyright (C) 2018 Simon D. Levy
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'breezy_slam')))
-from breezyslam.algorithms import RMHC_SLAM
-from breezyslam.sensors import RPLidarA1 as LaserModel
+This code is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as 
+published by the Free Software Foundation, either version 3 of the 
+License, or (at your option) any later version.
 
-from roboviz import MapVisualizer
-from function import *
+This code is distributed in the hope that it will be useful,     
+but WITHOUT ANY WARRANTY without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-
-lidar = Lidar_LM1()
+You should have received a copy of the GNU Lesser General Public License 
+along with this code.  If not, see <http://www.gnu.org/licenses/>.
+'''
 
 MAP_SIZE_PIXELS         = 500
 MAP_SIZE_METERS         = 10
@@ -24,15 +27,17 @@ LIDAR_DEVICE            = '/dev/ttyUSB0'
 # Ideally we could use all 250 or so samples that the RPLidar delivers in one 
 # scan, but on slower computers you'll get an empty map and unchanging position
 # at that rate.
-
 MIN_SAMPLES   = 200
+
+from breezyslam.algorithms import RMHC_SLAM
+from breezyslam.sensors import RPLidarA1 as LaserModel
+
+from roboviz import MapVisualizer
 
 if __name__ == '__main__':
 
     # Connect to Lidar unit
-    lidar_thread = threading.Thread(target=lidar_reading(lidar))  
-    lidar_thread.start()
-    lidar_thread.join()
+    lidar = Lidar(LIDAR_DEVICE)
 
     # Create an RMHC SLAM object with a laser model and optional robot model
     slam = RMHC_SLAM(LaserModel(), MAP_SIZE_PIXELS, MAP_SIZE_METERS)
@@ -88,5 +93,3 @@ if __name__ == '__main__':
     # Shut down the lidar connection
     lidar.stop()
     lidar.disconnect()
-
-   

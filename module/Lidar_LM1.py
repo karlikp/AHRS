@@ -4,6 +4,7 @@ import unitree_lidar_sdk_pybind
 import time
 import queue
 import struct
+import math
 from module.Mqtt_module import Mqtt
 
 class Lidar_LM1:
@@ -81,18 +82,22 @@ class Lidar_LM1:
                     timestamp = lidar_cloud['timestamp']
                     
                     mqtt_packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
-                    slam_packed_data = []
+                    distance_angle_data = []
+            
 
                     for point in points:
                         x, y, z, intensity, time, ring = point
                         mqtt_point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
-                        slam_point_data = [x, y, z]
                         mqtt_packed_data.extend(mqtt_point_data)  
-                        slam_packed_data.extend(slam_point_data)
-
-                    print(f"Saved to queue: {slam_packed_data}")
+                        if (-0.1 < z < 0.1):
+                            distance = math.sqrt(x**2 + y**2)
+                            angle = math.degrees(math.atan2(y, x))
+                            distance_angle_data.append((distance, angle))
+                         
+                    print(f"Saved to queue: {distance_angle_data}")
                     
                     self.mqtt_cloud_queue.put(mqtt_packed_data)
+                    self.slam_cloud_queue.put(distance_angle_data)
                 else:
                     print("Lack of cloud points")
 

@@ -50,12 +50,6 @@ def sensor_reading():
         print("Program interrupted")
 
 
-def lidar_reading():
-
-    lidar.check_init()
-    lidar.check_dirty()
-    lidar_is_dirty = lidar.get_dirty()
-    lidar.parsing_data()
 
 
 
@@ -66,7 +60,7 @@ if __name__ == "__main__":
     mqtt_client.client.connect("192.168.50.210", 1883, 60)
     
     sensor_thread = threading.Thread(target=sensor_reading)
-    lidar_thread = threading.Thread(target=lidar_reading)
+    lidar_thread = threading.Thread(target=lidar_reading(lidar))
 
     sensor_thread.start()
     lidar_thread.start()
