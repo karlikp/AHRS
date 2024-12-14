@@ -6,12 +6,14 @@ import queue
 import struct
 import math
 from module.Mqtt_module import Mqtt
+from collections import deque
 
 class Lidar_LM1:
 
     imu_queue = queue.Queue()
     mqtt_cloud_queue = queue.Queue()
-    slam_cloud_queue = queue.Queue()
+    slam_cloud_queue = deque(maxlen=250)
+    sorted_slam_cloud_queue = deque(maxlen=250)
     dirty_queue = queue.Queue()
 
     def __init__(self):
@@ -82,7 +84,7 @@ class Lidar_LM1:
                     timestamp = lidar_cloud['timestamp']
                     
                     mqtt_packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
-                    distance_angle_data = []
+                    #distance_angle_data = []
             
 
                     for point in points:
@@ -91,13 +93,15 @@ class Lidar_LM1:
                         mqtt_packed_data.extend(mqtt_point_data)  
                         if (-0.1 < z < 0.1):
                             distance = math.sqrt(x**2 + y**2)
-                            angle = math.degrees(math.atan2(y, x))
-                            distance_angle_data.append((distance, angle))
-                         
-                    print(f"Saved to queue: {distance_angle_data}")
+                            distance_mm = int(distance * 1000)
+                            angle = (math.degrees(math.atan2(y, x)) + 180)
+                            self.slam_cloud_queue.append((distance_mm, angle))
+                    
+                    self.sorted_slam_cloud_queue = deque(sorted(self.slam_cloud_queue, key=lambda x: x[1]))    
+                    #print(f"Saved to queue: {distance_angle_data}")
                     
                     self.mqtt_cloud_queue.put(mqtt_packed_data)
-                    self.slam_cloud_queue.put(distance_angle_data)
+                    #self.slam_cloud_queue.append(distance_angle_data)
                 else:
                     print("Lack of cloud points")
 
@@ -109,13 +113,18 @@ class Lidar_LM1:
             print("\nEmpty queue imu_lidar")
             return None
 
-    def get_cloud(self):
+    def get_mqtt_cloud(self):
         try:
             return self.mqtt_cloud_queue.get_nowait()
         except queue.Empty:
             print("\nEmpty queue cloud")
             return None
-
+        
+    def get_sorted_slam_cloud(self):
+        print(list(self.sorted_slam_cloud_queue))
+        return list(self.sorted_slam_cloud_queue)
+        
+    
     def get_dirty(self):
 
         try:
