@@ -5,16 +5,19 @@ import time
 import queue
 import struct
 import math
-from module.Mqtt_module import Mqtt
 from collections import deque
+from function import *
 
 class Lidar_LM1:
 
     imu_queue = queue.Queue()
     mqtt_cloud_queue = queue.Queue()
-    slam_cloud_queue = deque(maxlen=250)
-    sorted_slam_cloud_queue = deque(maxlen=250)
+    #slam_cloud_queue = deque(maxlen=360)
+    slam_cloud = []
+    sorted_slam_cloud_queue = deque(maxlen=360)
     dirty_queue = queue.Queue()
+    data_lock = threading.Lock()
+    seen = set()
 
     def __init__(self):
         self.is_dirty = False
@@ -86,22 +89,29 @@ class Lidar_LM1:
                     mqtt_packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
                     #distance_angle_data = []
             
+                    with self.data_lock:
+                        
 
-                    for point in points:
-                        x, y, z, intensity, time, ring = point
-                        mqtt_point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
-                        mqtt_packed_data.extend(mqtt_point_data)  
-                        if (-0.1 < z < 0.1):
-                            distance = math.sqrt(x**2 + y**2)
-                            distance_mm = int(distance * 1000)
-                            angle = (math.degrees(math.atan2(y, x)) + 180)
-                            self.slam_cloud_queue.append((distance_mm, angle))
-                    
-                    self.sorted_slam_cloud_queue = deque(sorted(self.slam_cloud_queue, key=lambda x: x[1]))    
-                    #print(f"Saved to queue: {distance_angle_data}")
-                    
+                        for point in points:
+                            x, y, z, intensity, time, ring = point
+                            mqtt_point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
+                            mqtt_packed_data.extend(mqtt_point_data)  
+
+                            angle = int(math.degrees(math.atan2(y, x)) + 180)
+
+                            #Adding unique points to list 
+                            if (-0.1 < z < 0.1) and (angle not in self.seen):  
+                                
+                                self.seen.add(angle)
+                                distance = math.sqrt(x**2 + y**2)
+                                distance_mm = int(distance * 1000)
+                                self.slam_cloud.append((distance_mm, angle))
+
+                    # for point in self.slam_cloud:
+                    #     print(f"Distance: {point[0]} mm, Angle: {point[1]} degrees")
+ 
                     self.mqtt_cloud_queue.put(mqtt_packed_data)
-                    #self.slam_cloud_queue.append(distance_angle_data)
+        
                 else:
                     print("Lack of cloud points")
 
@@ -120,9 +130,13 @@ class Lidar_LM1:
             print("\nEmpty queue cloud")
             return None
         
-    def get_sorted_slam_cloud(self):
-        print(list(self.sorted_slam_cloud_queue))
-        return list(self.sorted_slam_cloud_queue)
+    def get_slam_cloud(self):
+        with self.data_lock:
+            return self.slam_cloud
+        
+    def clear_slam_cloud(self):
+        self.slam_cloud.clear()
+        self.seen.clear()
         
     
     def get_dirty(self):

@@ -65,7 +65,7 @@ using namespace std;
 // Methods to load all data from file ------------------------------------------
 // Each line in the file has the format:
 //
-//  TIMESTAMP  ... Q1  Q1 ... Distances
+//  TIMESTAMP  ... Q1  Q2 ... Distances
 //  (usec)                    (mm)
 //  0          ... 2   3  ... 24 ... 
 //  

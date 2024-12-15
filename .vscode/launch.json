@@ -30,6 +30,22 @@
             
             }
             
+        },
+        {
+
+            
+            "name": "Python: Debug main_SLAM3.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_SLAM.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/unitree_lidar_sdk_pybind:${workspaceFolder}/lib:${workspaceFolder}/${workspaceFolder}/*"
+            
+            }
+            
         }
     ]
 }

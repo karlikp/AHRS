@@ -31,7 +31,7 @@ along with this code.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 from breezyslam.vehicles import WheeledVehicle
-from breezyslam.sensors import URG04LX
+from breezyslam.sensors import RPLidarA1
 
 
 
@@ -78,11 +78,11 @@ def load_data(datadir, dataset):
         
     return timestamps, scans, odometries
 
-class MinesLaser(URG04LX):
+class MinesLaser(RPLidarA1):
     
-    def __init__(self):
-        
-        URG04LX.__init__(self, 70, 145)
+   def __init__(self, detection_margin=0, offset_mm=0):
+        # call constructor base class 
+        super().__init__(detection_margin, offset_mm)
         
 # Class for MinesRover custom robot ------------------------------------------
 

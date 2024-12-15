@@ -67,6 +67,7 @@ def main():
     
 	# Load the data from the file, ignoring timestamps
     _, lidars, odometries = load_data('.', dataset)
+    lidars = 
     
     # Build a robot model if we want odometry
     robot = Rover() if use_odometry else None
@@ -135,7 +136,7 @@ def main():
         x_pix = mm2pix(x_mm)
         y_pix = mm2pix(y_mm)
                                                                                               
-        mapbytes[y_pix * MAP_SIZE_PIXELS + x_pix] = 0;
+        mapbytes[y_pix * MAP_SIZE_PIXELS + x_pix] = 0
                     
     # Save map and trajectory as PGM file    
     pgm_save('%s.pgm' % dataset, mapbytes, (MAP_SIZE_PIXELS, MAP_SIZE_PIXELS))

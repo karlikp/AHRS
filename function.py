@@ -4,6 +4,7 @@ sys.path.append("/home/karol/Desktop/repos/SLAM/module")
 from module.Mqtt_module import Mqtt
 import threading
 import time
+import numpy as np
 
 
 
@@ -78,6 +79,57 @@ def lidar_reading(lidar):
     
     lidar.check_init()
     lidar.check_dirty()
-    lidar_is_dirty = lidar.get_dirty()
     lidar.parsing_data()
 
+def interpolate_missing_angles(points):
+    """
+    Uzupełnia brakujące kąty w danych za pomocą interpolacji kwadratowej.
+    
+    :param points: Lista punktów w formacie (distance_mm, angle) z unikalnymi kątami
+    :return: Lista punktów uzupełnionych o brakujące kąty
+    """
+    
+    # Rozpakuj dane
+    distances, angles = zip(*points)
+    distances = np.array(distances)
+    angles = np.array(angles)
+    
+    # Pełny zakres kątów 0-360
+    full_angles = np.arange(0, 360, 1)
+    
+    # Funkcja interpolacji kwadratowej
+    def quadratic_interpolation(x, x0, x1, y0, y1):
+        """Interpolate using a quadratic function between two points."""
+        # Przygotowanie współczynników dla funkcji kwadratowej y = ax^2 + bx + c
+        a = (y1 - y0) / ((x1 - x0)**2)
+        b = -2 * a * x0
+        c = y0 + a * x0**2
+        return a * x**2 + b * x + c
+    
+    # Przechowujemy interpolowane odległości
+    interpolated_distances = []
+    
+    # Wykonaj interpolację dla każdego pełnego kąta
+    for angle in full_angles:
+        # Znajdź dwa najbliższe punkty (zdefiniowane przez angle) do wykonania interpolacji
+        if angle <= angles[0]:
+            interpolated_distances.append(distances[0])
+        elif angle >= angles[-1]:
+            interpolated_distances.append(distances[-1])
+        else:
+            # Znajdź dwa punkty sąsiednie, które otaczają nasz kąt
+            for i in range(len(angles) - 1):
+                if angles[i] <= angle < angles[i + 1]:
+                    x0, x1 = angles[i], angles[i + 1]
+                    y0, y1 = distances[i], distances[i + 1]
+                    # Interpoluj za pomocą funkcji kwadratowej
+                    interpolated_distance = quadratic_interpolation(angle, x0, x1, y0, y1)
+                    interpolated_distances.append(interpolated_distance)
+                    break
+    
+    # Zwróć dane w formacie (distance, angle)
+    interpolated_points = [(int(distance), int(angle)) for distance, angle in zip(interpolated_distances, full_angles)]
+    return interpolated_points
+
+def filter_distances(points):
+        return [point[0] for point in points]
