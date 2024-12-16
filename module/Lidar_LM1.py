@@ -5,6 +5,8 @@ import time
 import queue
 import struct
 import math
+import threading
+import copy
 from collections import deque
 from function import *
 
@@ -12,9 +14,7 @@ class Lidar_LM1:
 
     imu_queue = queue.Queue()
     mqtt_cloud_queue = queue.Queue()
-    #slam_cloud_queue = deque(maxlen=360)
     slam_cloud = []
-    sorted_slam_cloud_queue = deque(maxlen=360)
     dirty_queue = queue.Queue()
     data_lock = threading.Lock()
     seen = set()
@@ -38,7 +38,7 @@ class Lidar_LM1:
         while True:
             lidar_dirty = self.lidar.get_dirty_percentage()
             if lidar_dirty is not None:
-                #lidar_dirty: Float
+                
                 dirty_output.append(lidar_dirty)
 
 
@@ -132,7 +132,7 @@ class Lidar_LM1:
         
     def get_slam_cloud(self):
         with self.data_lock:
-            return self.slam_cloud
+            return copy.deepcopy(self.slam_cloud)
         
     def clear_slam_cloud(self):
         self.slam_cloud.clear()

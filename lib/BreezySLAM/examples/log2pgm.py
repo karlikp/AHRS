@@ -67,7 +67,6 @@ def main():
     
 	# Load the data from the file, ignoring timestamps
     _, lidars, odometries = load_data('.', dataset)
-    lidars = 
     
     # Build a robot model if we want odometry
     robot = Rover() if use_odometry else None
