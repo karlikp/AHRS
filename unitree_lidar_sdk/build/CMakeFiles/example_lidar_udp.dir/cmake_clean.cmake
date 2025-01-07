@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../bin/example_lidar_udp"
-  "../bin/example_lidar_udp.pdb"
+  "/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/example_lidar_udp"
+  "/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/example_lidar_udp.pdb"
   "CMakeFiles/example_lidar_udp.dir/examples/example_lidar_udp.cpp.o"
   "CMakeFiles/example_lidar_udp.dir/examples/example_lidar_udp.cpp.o.d"
 )

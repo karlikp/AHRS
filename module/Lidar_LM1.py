@@ -85,6 +85,7 @@ class Lidar_LM1:
                         x, y, z, intensity, time, ring = point
                         point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
                         packed_data.extend(point_data)  
+                        print(f"{x},{y},{z},{intensity}, {time}, {ring}")
 
                     #print(f"Saved to queue: {packed_data}")
                     

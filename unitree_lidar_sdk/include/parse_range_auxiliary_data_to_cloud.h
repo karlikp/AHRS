@@ -7,6 +7,7 @@
 #include "mavlink/SysMavlink/mavlink.h"
 #include <vector>
 #include <array>
+#include <iostream>
 
 /**
  * @brief Parse A Range And An Auxiliary Data To A Point Cloud
@@ -22,7 +23,10 @@ bool parseRangeAuxiliaryDataToCloud(
   const mavlink_ret_lidar_distance_data_packet_t &rangeData,
   std::vector<std::array<float, 4>> &scanCloud
   ){
-  
+
+  //The text isn't type to terminal
+  std::cout << "Parsing data";
+
   // check packet id match
   if (auxiliaryData.packet_id != rangeData.packet_id){
     return false;

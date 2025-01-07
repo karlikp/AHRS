@@ -27,6 +27,8 @@ last_mean_calculation_time = time.time()
 lidar_is_dirty = False
 
 def sensor_reading():
+    print("Starting sensor reading thread")
+
     global last_mean_calculation_time
     
     try:
@@ -50,15 +52,13 @@ def sensor_reading():
         print("Program interrupted")
 
 
+
 def lidar_reading():
 
     lidar.check_init()
     lidar.check_dirty()
     lidar_is_dirty = lidar.get_dirty()
     lidar.parsing_data()
-
-
-
 
     
 if __name__ == "__main__":
@@ -68,12 +68,14 @@ if __name__ == "__main__":
     sensor_thread = threading.Thread(target=sensor_reading)
     lidar_thread = threading.Thread(target=lidar_reading)
 
+
     sensor_thread.start()
     lidar_thread.start()
 
     time.sleep(3)  
 
     if lidar_is_dirty:
+        print("lidar too dirty, exit")
         exit()
 
     AHRS_mqtt = threading.Thread(target=send_AHRS_data, args=(AHRS_list, mqtt_client))

@@ -18,11 +18,11 @@ SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib/${CMAKE_SYSTEM_PROCESSOR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib/${CMAKE_SYSTEM_PROCESSOR})
 
-# Create shared library
-add_library(unitree_lidar_sdk SHARED
-  src/unitree_lidar_sdk.cpp  # Add your source files here, if needed
-  # Add other .cpp files related to the SDK if needed
-)
+# # Create shared library
+# add_library(unitree_lidar_sdk SHARED
+#   src/unitree_lidar_sdk.cpp  # Add your source files here, if needed
+#   # Add other .cpp files related to the SDK if needed
+# )
 
 # If there are any specific dependencies required for your shared library, link them here
 # target_link_libraries(unitree_lidar_sdk <dependencies>)
