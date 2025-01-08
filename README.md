@@ -23,16 +23,6 @@ Installed libraries:
 - adafruit-circuitpython-vl6180x,
 - smbus2.
 
-Creating python virtual environment(if you don't have):
-```bash
-python3 -m venv your_env
-```
-
-activate the virtual environent:
-```bash
-source your_env/bin/activate
-```
-
 If you don't have the libraries, you should install them:
 ```bash
 pip install adafruit-circuitpython-bmp3xx
@@ -40,9 +30,5 @@ pip install smbus2
 pip install adafruit-circuitpython-vl53l1x
 pip install adafruit-circuitpython-vl6180x
 ```
-SLAM require:
-```bash
-sudo apt install libxcb1 libx11-dev libegl1-mesa
-export QT_QPA_PLATFORM=xcb
-```
+
 

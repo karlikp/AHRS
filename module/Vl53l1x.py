@@ -65,5 +65,5 @@ class Vl53l1x:
         if not self.data_queue.empty():
             return self.data_queue.get()
         else:
-            #print("\nEmpty queue VL53L1X")
+            print("\nEmpty queue VL53L1X")
             return None

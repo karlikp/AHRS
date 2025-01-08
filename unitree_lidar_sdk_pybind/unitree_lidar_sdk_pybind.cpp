@@ -77,22 +77,22 @@ public:
                                                 lreader->getIMU().quaternion[1],
                                                 lreader->getIMU().quaternion[2],
                                                 lreader->getIMU().quaternion[3]);
-        imu_data["time_delay"] = lreader->getTimeDelay();
+        //imu_data["time_delay"] = lreader->getTimeDelay();
         return imu_data;
     }
 
     py::dict get_cloud_data() {
         py::dict cloud_data;
         cloud_data["timestamp"] = lreader->getCloud().stamp;
-        cloud_data["id"] = lreader->getCloud().id;
-        cloud_data["ring_num"] = lreader->getCloud().ringNum;
+
         
         py::list points_list;
         for (const auto& point : lreader->getCloud().points) {
-            points_list.append(py::make_tuple(point.x, point.y, point.z, point.intensity, point.time, point.ring));
+            if(point.z > -0.1 and point.z < 0.1)
+                points_list.append(py::make_tuple(point.x, point.y, point.z, point.intensity, point.time, point.ring));
         }
         cloud_data["points"] = points_list;  // Assigning the list to the dict
-        
+    
         return cloud_data;
     }
 

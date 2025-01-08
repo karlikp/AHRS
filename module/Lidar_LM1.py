@@ -4,20 +4,13 @@ import unitree_lidar_sdk_pybind
 import time
 import queue
 import struct
-import math
-import threading
-import copy
-from collections import deque
-from function import *
+from module.Mqtt_module import Mqtt
 
 class Lidar_LM1:
 
     imu_queue = queue.Queue()
-    mqtt_cloud_queue = queue.Queue()
-    slam_cloud = []
+    cloud_queue = queue.Queue()
     dirty_queue = queue.Queue()
-    data_lock = threading.Lock()
-    seen = set()
 
     def __init__(self):
         self.is_dirty = False
@@ -38,7 +31,7 @@ class Lidar_LM1:
         while True:
             lidar_dirty = self.lidar.get_dirty_percentage()
             if lidar_dirty is not None:
-                
+                #lidar_dirty: Float
                 dirty_output.append(lidar_dirty)
 
 
@@ -69,10 +62,10 @@ class Lidar_LM1:
 
                 if lidar_imu:
                     #Output data: 1)Timestamp: Double, 2)quaternion: Table of Float
-                    mqtt_packed_data = bytearray(
+                    packed_data = bytearray(
                             struct.pack('d4f', lidar_imu['timestamp'], *lidar_imu['quaternion'])
                         )
-                    self.imu_queue.put(mqtt_packed_data)         
+                    self.imu_queue.put(packed_data)         
                 else:
                     print("No IMU data received.")
 
@@ -81,37 +74,22 @@ class Lidar_LM1:
 
                 if lidar_cloud:
                     # Output data: 1)Timestamp: Float, 2)Cloud size (amount points): Int,
-                    # 3)Points {x, y, z, intensity, time}: Floats, ring: Uint32_t - 4 bytes
+                    # 3)Points {x, y, z, intensity, time}: Float, ring: Uint32_t - 4 bytes
                     
                     points = lidar_cloud['points']
                     timestamp = lidar_cloud['timestamp']
                     
-                    mqtt_packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
-                    #distance_angle_data = []
-            
-                    with self.data_lock:
-                        
+                    packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
 
-                        for point in points:
-                            x, y, z, intensity, time, ring = point
-                            mqtt_point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
-                            mqtt_packed_data.extend(mqtt_point_data)  
+                    for point in points:
+                        x, y, z, intensity, time, ring = point
+                        point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
+                        packed_data.extend(point_data)  
+                        print(f"{x},{y},{z},{intensity}, {time}, {ring}")
 
-                            angle = int(math.degrees(math.atan2(y, x)) + 180)
-
-                            #Adding unique points to list 
-                            if (-0.1 < z < 0.1) and (angle not in self.seen):  
-                                
-                                self.seen.add(angle)
-                                distance = math.sqrt(x**2 + y**2)
-                                distance_mm = int(distance * 1000)
-                                self.slam_cloud.append((distance_mm, angle))
-
-                    # for point in self.slam_cloud:
-                    #     print(f"Distance: {point[0]} mm, Angle: {point[1]} degrees")
- 
-                    self.mqtt_cloud_queue.put(mqtt_packed_data)
-        
+                    #print(f"Saved to queue: {packed_data}")
+                    
+                    self.cloud_queue.put(packed_data)
                 else:
                     print("Lack of cloud points")
 
@@ -123,22 +101,13 @@ class Lidar_LM1:
             print("\nEmpty queue imu_lidar")
             return None
 
-    def get_mqtt_cloud(self):
+    def get_cloud(self):
         try:
-            return self.mqtt_cloud_queue.get_nowait()
+            return self.cloud_queue.get_nowait()
         except queue.Empty:
             print("\nEmpty queue cloud")
             return None
-        
-    def get_slam_cloud(self):
-        with self.data_lock:
-            return copy.deepcopy(self.slam_cloud)
-        
-    def clear_slam_cloud(self):
-        self.slam_cloud.clear()
-        self.seen.clear()
-        
-    
+
     def get_dirty(self):
 
         try:

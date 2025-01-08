@@ -62,6 +62,6 @@ class Vl6180x:
         if not self.data_queue.empty():
             return self.data_queue.get()
         else:
-            #print("\nEmpty queue VL6180X")
+            print("\nEmpty queue VL6180X")
             return None
 

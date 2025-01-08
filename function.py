@@ -4,11 +4,12 @@ sys.path.append("/home/karol/Desktop/repos/SLAM/module")
 from module.Mqtt_module import Mqtt
 import threading
 import time
-import numpy as np
 
 
 
 def send_AHRS_data(AHRS, mqtt_client):
+    
+    print(f"Sending AHRS")
     
     def send_data(sensor, topic):
         while True:
@@ -18,7 +19,7 @@ def send_AHRS_data(AHRS, mqtt_client):
                 # check emptines
                 if data:
                     mqtt_client.client.publish(topic, data)
-                    #print(f"Sent data: {data}")
+                    print(f"Sent data: {data}")
                 # else:
                 #     print("No data to send. Skipping this cycle.")
 
@@ -42,6 +43,7 @@ def send_AHRS_data(AHRS, mqtt_client):
 
 
 def send_Lidar_data(lidar, mqtt_client):
+    print(f"Sending Lidar")
 
     def send_data(queue, topic):
       
@@ -49,7 +51,7 @@ def send_Lidar_data(lidar, mqtt_client):
             try:
                 data = queue.get_nowait()  # Load data without block
                 mqtt_client.client.publish(topic, data)
-                print(f"Sent data to topic {topic}: {data}")
+                #print(f"Sent data to topic {topic}: {data}")
 
             except Exception as e:
                 print(f"send lidar data exception: {e}")
@@ -74,12 +76,15 @@ def send_Lidar_data(lidar, mqtt_client):
     except KeyboardInterrupt:
         print("Stopping data transmission...")
 
-
 def lidar_reading(lidar):
-    
-    lidar.check_init()
-    lidar.check_dirty()
-    lidar.parsing_data()
+
+    print("Starting lidar reading thread")
+    try:
+        lidar.check_init()
+        lidar.check_dirty()
+        lidar.parsing_data()
+    except Exception as e:
+        print(f"Error in lidar_reading: {e}")
 
 def interpolate_missing_angles(points):
     """

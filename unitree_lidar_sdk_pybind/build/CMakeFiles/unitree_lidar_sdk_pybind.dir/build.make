@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind
+CMAKE_SOURCE_DIR = /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build
+CMAKE_BINARY_DIR = /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/unitree_lidar_sdk_pybind.dir/depend.make
@@ -70,18 +70,18 @@ include CMakeFiles/unitree_lidar_sdk_pybind.dir/progress.make
 include CMakeFiles/unitree_lidar_sdk_pybind.dir/flags.make
 
 CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o: CMakeFiles/unitree_lidar_sdk_pybind.dir/flags.make
-CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o: /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/unitree_lidar_sdk_pybind.cpp
+CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o: /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/unitree_lidar_sdk_pybind.cpp
 CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o: CMakeFiles/unitree_lidar_sdk_pybind.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o -MF CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o.d -o CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o -c /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/unitree_lidar_sdk_pybind.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o -MF CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o.d -o CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o -c /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/unitree_lidar_sdk_pybind.cpp
 
 CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/unitree_lidar_sdk_pybind.cpp > CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/unitree_lidar_sdk_pybind.cpp > CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.i
 
 CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/unitree_lidar_sdk_pybind.cpp -o CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/unitree_lidar_sdk_pybind.cpp -o CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.s
 
 # Object files for target unitree_lidar_sdk_pybind
 unitree_lidar_sdk_pybind_OBJECTS = \
@@ -93,9 +93,9 @@ unitree_lidar_sdk_pybind_EXTERNAL_OBJECTS =
 unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o
 unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: CMakeFiles/unitree_lidar_sdk_pybind.dir/build.make
 unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: CMakeFiles/unitree_lidar_sdk_pybind.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX shared module unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX shared module unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/unitree_lidar_sdk_pybind.dir/link.txt --verbose=$(VERBOSE)
-	/usr/bin/strip /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build/unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so
+	/usr/bin/strip /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/build/unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so
 
 # Rule to build all files generated by this target.
 CMakeFiles/unitree_lidar_sdk_pybind.dir/build: unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so
@@ -106,6 +106,6 @@ CMakeFiles/unitree_lidar_sdk_pybind.dir/clean:
 .PHONY : CMakeFiles/unitree_lidar_sdk_pybind.dir/clean
 
 CMakeFiles/unitree_lidar_sdk_pybind.dir/depend:
-	cd /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build /home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/build/CMakeFiles/unitree_lidar_sdk_pybind.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/build /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/build /home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/build/CMakeFiles/unitree_lidar_sdk_pybind.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/unitree_lidar_sdk_pybind.dir/depend
 

@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = -Dunitree_lidar_sdk_pybind_EXPORTS
 
-CXX_INCLUDES = -I/home/karol/Desktop/scripts/SLAM/unitree_lidar_sdk_pybind/include -isystem /usr/include/python3.11
+CXX_INCLUDES = -I/home/pbl/Documents/SLAM/unitree_lidar_sdk_pybind/include -isystem /usr/include/python3.11 -isystem /home/pbl/Documents/SLAM/pbl_env/lib/python3.11/site-packages/pybind11/include
 
 CXX_FLAGS = -std=c++14  -O3 -Wall -DNDEBUG -fPIC -fvisibility=hidden -flto -fno-fat-lto-objects
 
