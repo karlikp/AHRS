@@ -72,6 +72,8 @@
 
        "python.analysis.extraPaths": [
         "${workspaceFolder}/lib",
-        "${workspaceFolder}/unitree_lidar_sdk_pybind"
+        "${workspaceFolder}/unitree_lidar_sdk_pybind",
+        "./module",
+        "./module"
     ]
 }

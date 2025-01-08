@@ -1,8 +1,14 @@
 import statistics
 import queue
 import struct
+import sys
+import os
+# Adding dir 'utils' to sys.path based on main project dir
+sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
+from utils import select_channel
+
 from adafruit_vl53l1x import VL53L1X
-from .Mux_i2c import select_channel
+
 
 
 

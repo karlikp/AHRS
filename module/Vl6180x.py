@@ -1,10 +1,14 @@
 import statistics
 import struct
-from adafruit_vl6180x import VL6180X
-from .Mux_i2c import select_channel
 import queue
+import os
 import sys
+# Adding dir 'utils' to sys.path based on main project dir
+sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 sys.path.append('../')
+
+from adafruit_vl6180x import VL6180X
+from utils import select_channel
 
 class Vl6180x:
     sensors = {}

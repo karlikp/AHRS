@@ -323,7 +323,7 @@ def pi_2_pi(angle):
     return angle_mod(angle)
 
 
-def main():
+def fastSLAM_main():
     print(__file__ + " start!!")
 
     time = 0.0
@@ -388,7 +388,3 @@ def main():
             plt.axis("equal")
             plt.grid(True)
             plt.pause(0.001)
-
-
-if __name__ == '__main__':
-    main()

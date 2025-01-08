@@ -1,7 +1,13 @@
-from adafruit_bmp3xx import BMP3XX_I2C
-from .Mux_i2c import select_channel
 import queue
 import struct
+import os
+import sys
+
+# Adding dir 'utils' to sys.path based on main project dir
+sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
+from utils import select_channel
+
+from adafruit_bmp3xx import BMP3XX_I2C
 
 class Bmp388:
   channel = 0

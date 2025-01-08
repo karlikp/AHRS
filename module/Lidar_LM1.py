@@ -1,16 +1,21 @@
 import sys
-sys.path.append("/home/karol/Desktop/repos/SLAM/unitree_lidar_sdk_pybind/*")
+import os
+# Adding dir 'unitree_lidar_sdk_pybind' to sys.path based on main project dir
+sys.path.append(os.path.join(os.path.dirname(__file__), 'unitree_lidar_sdk_pybind'))
+
 import unitree_lidar_sdk_pybind
 import time
 import queue
 import struct
-from module.Mqtt_module import Mqtt
 
 class Lidar_LM1:
 
-    imu_queue = queue.Queue()
-    cloud_queue = queue.Queue()
-    dirty_queue = queue.Queue()
+    mqtt_imu_queue = queue.Queue()
+    mqtt_cloud_queue = queue.Queue()
+    mqtt_dirty_queue = queue.Queue()
+    
+    slam_imu_queue = queue.Queue()
+    slam_cloud_queue = queue.Queue()
 
     def __init__(self):
         self.is_dirty = False
@@ -31,6 +36,7 @@ class Lidar_LM1:
         while True:
             lidar_dirty = self.lidar.get_dirty_percentage()
             if lidar_dirty is not None:
+                print(f"Current lidar dirty percentage: {lidar_dirty}%")  # Dodaj logowanie
                 #lidar_dirty: Float
                 dirty_output.append(lidar_dirty)
 
@@ -40,7 +46,7 @@ class Lidar_LM1:
                 if lidar_dirty > 10:
                     self.is_dirty = True
                     packed_data = bytearray(struct.pack('f', lidar_dirty))
-                    self.dirty_queue.put(packed_data)
+                    self.mqtt_dirty_queue.put(packed_data)
                     print("The protection cover is too dirty! Please clean it right now! Exiting.")
                     exit(0)
                 count_percentage += 1
@@ -49,7 +55,7 @@ class Lidar_LM1:
         # Save Float[4] to queue
         for value in dirty_output:
             packed_data = bytearray(struct.pack('f', value))
-            self.dirty_queue.put(packed_data)
+            self.mqtt_dirty_queue.put(packed_data)
 
     def parsing_data(self):
         print("\nParsing data (PointCloud and IMU)...")
@@ -65,7 +71,8 @@ class Lidar_LM1:
                     packed_data = bytearray(
                             struct.pack('d4f', lidar_imu['timestamp'], *lidar_imu['quaternion'])
                         )
-                    self.imu_queue.put(packed_data)         
+                    self.mqtt_imu_queue.put(packed_data) 
+                    self.slam_imu_queue.put((lidar_imu['timestamp'], *lidar_imu['quaternion']))        
                 else:
                     print("No IMU data received.")
 
@@ -84,36 +91,16 @@ class Lidar_LM1:
                     for point in points:
                         x, y, z, intensity, time, ring = point
                         point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
-                        packed_data.extend(point_data)  
-                        print(f"{x},{y},{z},{intensity}, {time}, {ring}")
-
-                    #print(f"Saved to queue: {packed_data}")
+                        packed_data.extend(point_data) 
+                        self.slam_cloud_queue.put([x, y]) # 2D 
+                        
+                        #print(f"{x},{y},{z},{intensity}, {time}, {ring}")
                     
-                    self.cloud_queue.put(packed_data)
+                    self.mqtt_cloud_queue.put(packed_data)
+                    
                 else:
                     print("Lack of cloud points")
 
-
-    def get_imu(self): 
-        try:
-            return self.imu_queue.get_nowait()
-        except queue.Empty:
-            print("\nEmpty queue imu_lidar")
-            return None
-
-    def get_cloud(self):
-        try:
-            return self.cloud_queue.get_nowait()
-        except queue.Empty:
-            print("\nEmpty queue cloud")
-            return None
-
     def get_dirty(self):
-
-        try:
-            return self.dirty_queue.get_nowait()
-        except queue.Empty:
-            #print("\nEmpty queue dirty")
-            return None
-
+        return self.is_dirty
 
