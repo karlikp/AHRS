@@ -14,8 +14,8 @@ class Lidar_LM1:
     mqtt_cloud_queue = queue.Queue()
     mqtt_dirty_queue = queue.Queue()
     
-    slam_imu_queue = queue.Queue()
-    slam_cloud_queue = queue.Queue()
+    current_quaternions = []
+    current_cloud = []
 
     def __init__(self):
         self.is_dirty = False
@@ -67,12 +67,14 @@ class Lidar_LM1:
                 lidar_imu = self.lidar.get_imu_data()
 
                 if lidar_imu:
+                    temp_imu = []
                     #Output data: 1)Timestamp: Double, 2)quaternion: Table of Float
                     packed_data = bytearray(
                             struct.pack('d4f', lidar_imu['timestamp'], *lidar_imu['quaternion'])
                         )
                     self.mqtt_imu_queue.put(packed_data) 
-                    self.slam_imu_queue.put((lidar_imu['timestamp'], *lidar_imu['quaternion']))        
+                    self.current_quaternions[:] = [lidar_imu['timestamp'], *lidar_imu['quaternion']]  
+                         
                 else:
                     print("No IMU data received.")
 
@@ -87,15 +89,17 @@ class Lidar_LM1:
                     timestamp = lidar_cloud['timestamp']
                     
                     packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
+                    temp_cloud = []
 
                     for point in points:
                         x, y, z, intensity, time, ring = point
                         point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
                         packed_data.extend(point_data) 
-                        self.slam_cloud_queue.put([x, y]) # 2D 
+                        temp_cloud.append((x,y))
                         
-                        #print(f"{x},{y},{z},{intensity}, {time}, {ring}")
-                    
+                    #print(f"{x},{y},{z},{intensity}, {time}, {ring}")
+                        
+                    self.current_cloud[:] = temp_cloud # 2D 
                     self.mqtt_cloud_queue.put(packed_data)
                     
                 else:
@@ -103,4 +107,10 @@ class Lidar_LM1:
 
     def get_dirty(self):
         return self.is_dirty
-
+    
+    def get_current_quaternions(self):
+        return self.current_quaternions
+    
+    def get_current_cloud(self):
+        return self.current_cloud
+    

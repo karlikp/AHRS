@@ -9,11 +9,13 @@ import time
 
 class Bmx160:
 
+    current_imu = []
+    data_queue = queue.Queue() 
+    
     def __init__(self, bus):
         self.sensor = BMX160(1)
         self.i2cbus = smbus.SMBus(bus)
         self.i2c_addr = 0x68
-        self.data_queue = queue.Queue() 
         self.topic = "AHRS/bmx160"
 
         while not self.sensor.begin():
@@ -32,6 +34,7 @@ class Bmx160:
                 
                 #`bytearray`(format: 9 floatów)
                 packed_data = bytearray(struct.pack('9f', *imu_data))
+                self.current_imu[:] = imu_data
 
                 self.data_queue.put(packed_data)
 
@@ -44,3 +47,6 @@ class Bmx160:
         else:
             print("\nEmpty queue bmx160")
             return None
+        
+    def get_current_imu(self):
+        return self.current_imu

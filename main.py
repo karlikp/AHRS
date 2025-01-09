@@ -7,12 +7,12 @@ from utils import *
 
 if __name__ == "__main__":
     
-    manager = Data_manager()
+    data_manager = Data_manager()
     
-    manager.mqtt_connect()
+    data_manager.mqtt_connect()
 
-    sensor_thread = threading.Thread(target = manager.sensor_reading)
-    lidar_thread = threading.Thread(target = manager.lidar_reading)
+    sensor_thread = threading.Thread(target = data_manager.sensor_reading)
+    lidar_thread = threading.Thread(target = data_manager.lidar_reading)
 
     sensor_thread.start()
     lidar_thread.start()
@@ -23,16 +23,19 @@ if __name__ == "__main__":
     #     print("lidar too dirty, exit")
     #     exit()
 
-    AHRS_mqtt = threading.Thread(target = manager.send_AHRS_data)
-    Lidar_mqtt = threading.Thread(target = manager.send_Lidar_data)
+    SLAM_thread = threading.Thread(target = slam_process, args = (data_manager,))
+    #AHRS_mqtt = threading.Thread(target = data_manager.send_AHRS_data)
+    #Lidar_mqtt = threading.Thread(target = data_manager.send_Lidar_data)
     
-    AHRS_mqtt.start()
-    Lidar_mqtt.start()
+    SLAM_thread.start()
+    #AHRS_mqtt.start()
+    #Lidar_mqtt.start()
 
     sensor_thread.join()
     lidar_thread.join()
-    AHRS_mqtt.join()
-    Lidar_mqtt.join()
+    #AHRS_mqtt.join()
+    #Lidar_mqtt.join()
+    SLAM_thread.join()
     
    
     

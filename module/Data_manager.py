@@ -138,4 +138,13 @@ class Data_manager:
             
     def lidar_is_dirty(self):
         return self.lidar.get_dirty()
+    
+    def get_current_imu(self):
+        return self.bmx160.get_current_imu()
+        
+    def get_current_quaternions(self):
+        return self.lidar.get_current_quaternions()
+        
+    def get_current_cloud(self):
+        return self.lidar.get_current_cloud()
             
