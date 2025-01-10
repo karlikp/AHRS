@@ -81,7 +81,19 @@ class Lidar_LM1:
                     
                     # Dodawanie tylko quaternionów do listy standby, dopóki nie osiągnie 700
                     if len(self.stby_quaternions) < 700:
-                        self.stby_quaternions.append(lidar_imu['quaternion'])
+                        
+                        try:
+                            data = {
+                                "timestamp": lidar_imu['timestamp'],
+                                "q_w": lidar_imu['quaternion'][0],
+                                "q_x": lidar_imu['quaternion'][1],
+                                "q_y": lidar_imu['quaternion'][2],
+                                "q_z": lidar_imu['quaternion'][3],
+                            }
+    
+                            self.stby_quaternions.append(data)
+                        except Exception as e:
+                            print(f"Added data: {data}")
                     else:
                         self.current_quaternions[:] = [*lidar_imu['quaternion']]
                       

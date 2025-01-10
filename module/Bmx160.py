@@ -38,7 +38,16 @@ class Bmx160:
                     ] 
                 
                 if len(self.stby_imu) < 700:
-                    self.stby_imu.append(imu_data[3:])
+                    
+                    stby_data = {
+                        "a_x": data[3],
+                        "a_y": data[4],
+                        "a_z": data[5],
+                        "om_x": data[6],
+                        "om_y": data[7],
+                        "om_z": data[8]
+                    }
+                    self.stby_imu.append(stby_data)
                 else:
                     self.current_imu[:] = imu_data
 
