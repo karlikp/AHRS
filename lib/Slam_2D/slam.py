@@ -52,67 +52,74 @@ class SLAM:
     ### Instance methods ###
     ########################
 
-    def get_imu_data(self, stby=700, offset_quat=True, gravity_bias_est=False):
+    def get_imu_data_realtime(self, imu_data_stream, stby=700, offset_quat=True, gravity_bias_est=False):
         """
-        Loads, cleans and assigns IMU data to object attributes.
+        Reads, cleans, and assigns IMU data to object attributes in real-time.
 
         Args:
+            imu_data_stream (list):
+                A real-time list containing IMU data with the following format:
+                [
+                    {"timestamp": <float>, 
+                    "q_x": <float>, "q_y": <float>, "q_z": <float>, "q_w": <float>,
+                    "om_x": <float>, "om_y": <float>, "om_z": <float>,
+                    "a_x": <float>, "a_y": <float>, "a_z": <float>
+                    },
+                    ...
+                ]
             stby (int):
-                Number of initial IMU readings (standby readings)
-                before first movement. Default: 700.
+                Number of initial IMU readings (standby readings) before first movement. Default: 700.
             offset_quat (bool):
                 If True, the quaternion readings will be offset such that
-                initial heading is zero. Default: True.
+                the initial heading is zero. Default: True.
             gravity_bias_est (bool):
                 If True, the initial bias estimation, including estimating
                 gravity component in the z-direction, will be done by averaging
-                across the first ´stby´ number of IMU readings. Default: False
+                across the first ´stby´ number of IMU readings. Default: False.
         """
 
-        imu = pd.read_csv(self.imu_file, usecols=["field.header.stamp",
-                                                  "field.orientation.x",
-                                                  "field.orientation.y",
-                                                  "field.orientation.z",
-                                                  "field.orientation.w",
-                                                  "field.angular_velocity.x",
-                                                  "field.angular_velocity.y",
-                                                  "field.angular_velocity.z",
-                                                  "field.linear_acceleration.x",
-                                                  "field.linear_acceleration.y",
-                                                  "field.linear_acceleration.z"])
-        imu.columns = ["timestamp", "q_x", "q_y", "q_z", "q_w", "om_x", "om_y", "om_z", "a_x", "a_y", "a_z"]
+        # Convert the stream of dictionaries into structured numpy arrays
+        imu = pd.DataFrame(imu_data_stream)  # Convert list of dicts to DataFrame for easier manipulation
 
-        # Assign arrays for timestamp, linear acceleration and rotational velocity
-        self.imu_t = np.round(imu.timestamp.values / 1e9, 3) # converting to seconds with three decimal places
+        # Ensure the required columns are present
+        required_columns = ["timestamp", "q_x", "q_y", "q_z", "q_w", 
+                            "om_x", "om_y", "om_z", "a_x", "a_y", "a_z"]
+        if not all(col in imu.columns for col in required_columns):
+            raise ValueError(f"IMU data is missing required fields. Expected fields: {required_columns}")
+
+        # Assign arrays for timestamp, linear acceleration, and rotational velocity
+        self.imu_t = np.round(imu["timestamp"].values / 1e9, 3)  # converting to seconds with three decimal places
         self.imu_f = imu[["a_x", "a_y", "a_z"]].values
         self.imu_w = imu[["om_x", "om_y", "om_z"]].values
         self.imu_q = imu[["q_w", "q_x", "q_y", "q_z"]].values
-        self.n = self.imu_f.shape[0] # number of IMU readings
+        self.n = self.imu_f.shape[0]  # number of IMU readings
 
+        # Offset quaternion readings to ensure initial heading is zero
         if offset_quat:
             # Transform quaternions to Euler angles
             phi = np.ndarray((self.n, 3))
             for i in range(self.n):
-                phi[i,:] = Quaternion(*self.imu_q[i,:]).normalize().to_euler()
+                phi[i, :] = Quaternion(*self.imu_q[i, :]).normalize().to_euler()
 
-            # Shift yaw angle such that the inital yaw equals zero
-            inityaw = np.mean(phi[:stby,2])       # Estimated initial yaw
-            tf_yaw = wraptopi(phi[:,2] - inityaw) # Transformed yaw
+            # Shift yaw angle such that the initial yaw equals zero
+            inityaw = np.mean(phi[:stby, 2])  # Estimated initial yaw
+            tf_yaw = wraptopi(phi[:, 2] - inityaw)  # Transformed yaw
 
             # Transform Euler angles back to quaternions
-            phi[:,2] = tf_yaw
+            phi[:, 2] = tf_yaw
             for i in range(self.n):
-                self.imu_q[i,:] = Quaternion(euler=phi[i,:]).normalize().to_numpy()
+                self.imu_q[i, :] = Quaternion(euler=phi[i, :]).normalize().to_numpy()
 
+        # Estimate gravity bias if required
         if gravity_bias_est:
             imu_f_trans = np.ndarray((stby, 3))
             for i in range(stby):
-                C_ns = Quaternion(*self.imu_q[i,:]).normalize().to_mat()
-                imu_f_trans[i] = C_ns.dot(self.imu_f[i,:])
+                C_ns = Quaternion(*self.imu_q[i, :]).normalize().to_mat()
+                imu_f_trans[i] = C_ns.dot(self.imu_f[i, :])
 
-                self.g = np.mean(imu_f_trans,0) # bias + gravity
+            self.g = np.mean(imu_f_trans, axis=0)  # bias + gravity
         else:
-            self.g = np.array([0, 0, 9.80665]) # gravity
+            self.g = np.array([0, 0, 9.80665])  # gravity
 
 
     def get_lidar_data(self):
@@ -224,7 +231,63 @@ class SLAM:
 
         self.p_cov[0] = np.diag(np.hstack([p_cov_p, p_cov_v, p_cov_q, p_cov_bias_f, p_cov_bias_w]))**2
 
+    def initialize_imu(self, stby_imu, stby_quaternions, stby=700, offset_quat=True, gravity_bias_est=False):
+        """
+        Loads, cleans and assigns IMU data to object attributes.
 
+        Args:
+            stby (int):
+                Number of initial IMU readings (standby readings)
+                before first movement. Default: 700.
+            offset_quat (bool):
+                If True, the quaternion readings will be offset such that
+                initial heading is zero. Default: True.
+            gravity_bias_est (bool):
+                If True, the initial bias estimation, including estimating
+                gravity component in the z-direction, will be done by averaging
+                across the first ´stby´ number of IMU readings. Default: False
+        """
+        # Creating DataFrame table from lists   
+        imu_df = pd.DataFrame(stby_imu)
+        quaternion_df = pd.DataFrame(stby_quaternions)
+        
+        complex_imu_df = pd.concat([quaternion_df, imu_df], axis = 1)
+        
+
+        # Assign arrays for timestamp, linear acceleration and rotational velocity
+        self.imu_t = np.round(complex_imu_df.timestamp.values / 1e9, 3) # converting to seconds with three decimal places
+        self.imu_f = complex_imu_df[["a_x", "a_y", "a_z"]].values
+        self.imu_w = complex_imu_df[["om_x", "om_y", "om_z"]].values
+        self.imu_q = complex_imu_df[["q_w", "q_x", "q_y", "q_z"]].values
+        self.n = self.imu_f.shape[0] # number of IMU readings
+
+        if offset_quat:
+            # Transform quaternions to Euler angles
+            phi = np.ndarray((self.n, 3))
+            for i in range(self.n):
+                phi[i,:] = Quaternion(*self.imu_q[i,:]).normalize().to_euler()
+
+            # Shift yaw angle such that the inital yaw equals zero
+            inityaw = np.mean(phi[:stby,2])       # Estimated initial yaw
+            self.tf_yaw = wraptopi(phi[:,2] - inityaw) # Transformed yaw 
+
+            # Transform Euler angles back to quaternions
+            phi[:,2] = self.tf_yaw
+            for i in range(self.n):
+                self.imu_q[i,:] = Quaternion(euler=phi[i,:]).normalize().to_numpy()
+
+        if gravity_bias_est:
+            imu_f_trans = np.ndarray((stby, 3))
+            for i in range(stby):
+                C_ns = Quaternion(*self.imu_q[i,:]).normalize().to_mat()
+                imu_f_trans[i] = C_ns.dot(self.imu_f[i,:])
+
+                self.g = np.mean(imu_f_trans,0) # bias + gravity
+        else:
+            self.g = np.array([0, 0, 9.80665]) # gravity
+
+        
+    
     def initialize_lidar(self):
         """
         Initializes global navigation frame with the point cloud from the first

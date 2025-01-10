@@ -147,4 +147,11 @@ class Data_manager:
         
     def get_current_cloud(self):
         return self.lidar.get_current_cloud()
+    
+    def get_stby_quaternions(self):
+        return self.lidar.get_stby_quaternions
+    
+    def get_stby_imu(self):
+        return self.bmx160.get_stby_imu
+    
             

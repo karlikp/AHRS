@@ -10,14 +10,19 @@ import struct
 
 class Lidar_LM1:
 
-    mqtt_imu_queue = queue.Queue()
-    mqtt_cloud_queue = queue.Queue()
-    mqtt_dirty_queue = queue.Queue()
+   
     
-    current_quaternions = []
-    current_cloud = []
+    
 
     def __init__(self):
+        self.mqtt_imu_queue = queue.Queue()
+        self.mqtt_cloud_queue = queue.Queue()
+        self.mqtt_dirty_queue = queue.Queue()
+        
+        self.current_quaternions = []
+        self.current_cloud = []
+        self.stby_quaternions = []
+        
         self.is_dirty = False
         self.lidar = unitree_lidar_sdk_pybind.UnitreeLidarWrapper()
         self.lidar.set_working_mode(1)  # NORMAL
@@ -67,13 +72,19 @@ class Lidar_LM1:
                 lidar_imu = self.lidar.get_imu_data()
 
                 if lidar_imu:
-                    temp_imu = []
+   
                     #Output data: 1)Timestamp: Double, 2)quaternion: Table of Float
                     packed_data = bytearray(
                             struct.pack('d4f', lidar_imu['timestamp'], *lidar_imu['quaternion'])
                         )
                     self.mqtt_imu_queue.put(packed_data) 
-                    self.current_quaternions[:] = [lidar_imu['timestamp'], *lidar_imu['quaternion']]  
+                    
+                    # Dodawanie tylko quaternionów do listy standby, dopóki nie osiągnie 700
+                    if len(self.stby_quaternions) < 700:
+                        self.stby_quaternions.append(lidar_imu['quaternion'])
+                    else:
+                        self.current_quaternions[:] = [*lidar_imu['quaternion']]
+                      
                          
                 else:
                     print("No IMU data received.")
@@ -113,4 +124,6 @@ class Lidar_LM1:
     
     def get_current_cloud(self):
         return self.current_cloud
+    def get_stby_quaternions(self):
+        return self.stby_quaternions
     
