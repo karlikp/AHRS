@@ -11,13 +11,15 @@ def slam_process(data_manager):
     slam = SLAM(algorithm) # imu_path, lid_path)
     
     #standby IMU
+    """
     stby_imu = data_manager.get_stby_imu()
     stby_quaternions = data_manager.get_stby_quaternions()
     slam.initialize_imu(stby_imu, stby_quaternions) 
-
+    """
+    
     # Processing data
-    slam.set_params()
-    slam.initialize_arrays()    
+    #slam.set_params()
+    #slam.initialize_arrays()    
     slam.ekf_real_time(data_manager)
     
     #slam.postprocess()

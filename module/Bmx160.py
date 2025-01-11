@@ -37,19 +37,17 @@ class Bmx160:
                     round(data[6], 2), round(data[7], 2), round(data[8], 2)                #accelerometer: xyz 
                     ] 
                 
-                if len(self.stby_imu) < 700:
+                self.current_imu = {
+                    'mag': [round(data[0], 2), round(data[1], 2), round(data[2], 2)],  # magnetometr: x, y, z
+                    'gyro': [round(data[3], 2), round(data[4], 2), round(data[5], 2)],  # żyroskop: x, y, z
+                    'acc': [round(data[6], 2), round(data[7], 2), round(data[8], 2)]   # akcelerometr: x, y, z
+                }
+                
+                # if len(self.stby_imu) < 700:
                     
-                    stby_data = {
-                        "a_x": data[3],
-                        "a_y": data[4],
-                        "a_z": data[5],
-                        "om_x": data[6],
-                        "om_y": data[7],
-                        "om_z": data[8]
-                    }
-                    self.stby_imu.append(stby_data)
-                else:
-                    self.current_imu[:] = imu_data
+            
+                #     self.stby_imu.append(imu_slam)
+                # else:
 
                 #`bytearray`(format: 9 floatów)
                 packed_data = bytearray(struct.pack('9f', *imu_data))
@@ -71,4 +69,5 @@ class Bmx160:
     
     # 0-2 xyz gyroscope; 3-5 xyz accelerometer
     def get_stby_imu(self):
+        print(type(self.stby_imu))
         return self.stby_imu

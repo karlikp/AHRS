@@ -87,10 +87,10 @@ public:
 
         
         py::list points_list;
-        for (const auto& point : lreader->getCloud().points) {
-            if(point.z > -0.1 and point.z < 0.1)
-                points_list.append(py::make_tuple(point.x, point.y, point.z, point.intensity, point.time, point.ring));
-        }
+        // for (const auto& point : lreader->getCloud().points) {
+        //     if(point.z > -0.1 and point.z < 0.1)
+        points_list.append(py::make_tuple(point.x, point.y, point.z, point.intensity, point.time, point.ring));
+        // }
         cloud_data["points"] = points_list;  // Assigning the list to the dict
     
         return cloud_data;

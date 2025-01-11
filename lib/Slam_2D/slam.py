@@ -42,6 +42,12 @@ class SLAM:
         """
 
         self.algorithm = algorithm
+        self.g = np.array([0, 0, -9.81])  # Wektor grawitacji (przyspieszenie ziemskie w m/s^2)
+        self.Q_imu = np.eye(12) * 0.01  # 12x12 macierz, gdzie każdy element ma wariancję 0.01
+        self.R_lid = np.eye(2) * 0.1  # Przykładowa macierz kowariancji LiDAR (2x2)
+        
+        self.max_iterations = 1000  # Domyślny limit iteracji
+        self.current_iteration = 0
         # self.imu_file = imu_file
         # self.lid_file = lid_file
         # self.gt_traj = pd.read_csv(gt_traj_file, header=None, usecols=range(2)).values
@@ -51,6 +57,11 @@ class SLAM:
     ########################
     ### Instance methods ###
     ########################
+    
+    def termination_condition_met(self):
+        """Określa, czy warunek zakończenia został spełniony."""
+        self.current_iteration += 1
+        return self.current_iteration >= self.max_iterations
 
     def get_imu_data_realtime(self, imu_data_stream, stby=700, offset_quat=True, gravity_bias_est=False):
         """
@@ -132,7 +143,7 @@ class SLAM:
 
         # Assign arrays for timestamp and range data
         self.lid_t = np.round(lid["field.header.stamp"].values / 1e9, 3) # converting to seconds with three decimal places
-        self.lid_r = lid.iloc[:,1:].values
+        self.lid_r = lid.iloc[:,1:].values # WK
 
 
     def plot_ground_truth(self):
@@ -259,17 +270,19 @@ class SLAM:
         self.imu_f = complex_imu_df[["a_x", "a_y", "a_z"]].values
         self.imu_w = complex_imu_df[["om_x", "om_y", "om_z"]].values
         self.imu_q = complex_imu_df[["q_w", "q_x", "q_y", "q_z"]].values
-        self.n = self.imu_f.shape[0] # number of IMU readings
+        n = self.imu_f.shape[0] # number of IMU readings
 
         if offset_quat:
             # Transform quaternions to Euler angles
-            phi = np.ndarray((self.n, 3))
-            for i in range(self.n):
+            phi = np.ndarray((n, 3))
+            for i in range(n):
                 phi[i,:] = Quaternion(*self.imu_q[i,:]).normalize().to_euler()
 
             # Shift yaw angle such that the inital yaw equals zero
             inityaw = np.mean(phi[:stby,2])       # Estimated initial yaw
-            self.tf_yaw = wraptopi(phi[:,2] - inityaw) # Transformed yaw 
+            
+            """ Transformed yaw !!!"""
+            self.tf_yaw = wraptopi(phi[:,2] - inityaw) 
 
             # Transform Euler angles back to quaternions
             phi[:,2] = self.tf_yaw
@@ -285,6 +298,41 @@ class SLAM:
                 self.g = np.mean(imu_f_trans,0) # bias + gravity
         else:
             self.g = np.array([0, 0, 9.80665]) # gravity
+            
+    # def single_imu(self, stby=700, offset_quat=True, gravity_bias_est=False):
+    #     """
+    #     Loads, cleans and assigns single IMU data to object attributes.
+    #     """
+        
+
+    #     # Assign arrays for timestamp, linear acceleration and rotational velocity
+    #     self.imu_t = np.round(complex_imu_df.timestamp.values / 1e9, 3) # converting to seconds with three decimal places
+    #     self.imu_f = complex_imu_df[["a_x", "a_y", "a_z"]].values
+    #     self.imu_w = complex_imu_df[["om_x", "om_y", "om_z"]].values
+    #     self.imu_q = complex_imu_df[["q_w", "q_x", "q_y", "q_z"]].values
+    #     n = self.imu_f.shape[0] # number of IMU readings
+
+    #     if offset_quat:
+    #         # Transform quaternions to Euler angles
+    #         phi = np.ndarray((n, 3))
+    #         for i in range(n):
+    #             phi[i,:] = Quaternion(*self.imu_q[i,:]).normalize().to_euler()
+
+    #         # Transform Euler angles back to quaternions
+    #         phi[:,2] = self.tf_yaw
+    #         for i in range(self.n):
+    #             self.imu_q[i,:] = Quaternion(euler=phi[i,:]).normalize().to_numpy()
+
+    #     if gravity_bias_est:
+    #         imu_f_trans = np.ndarray((stby, 3))
+    #         for i in range(stby):
+    #             C_ns = Quaternion(*self.imu_q[i,:]).normalize().to_mat()
+    #             imu_f_trans[i] = C_ns.dot(self.imu_f[i,:])
+
+    #             self.g = np.mean(imu_f_trans,0) # bias + gravity
+    #     else:
+    #         self.g = np.array([0, 0, 9.80665]) # gravity
+            
 
         
     
@@ -309,150 +357,72 @@ class SLAM:
         if self.algorithm == "feature":
             self.gf = ScanFeature(self.lid_r[0,:], frame="global")
 
-        lid_i = 1                                    # index of next LiDAR scan
+        #lid_i = 1                                    # index of next LiDAR scan
         lid_state = np.hstack([self.p_est[0,:2], 0]) # current position and heading state estimate
 
-        return lid_i, lid_state
+        return  lid_state
 
 
-    def ekf(self):
-        """
-        Main loop of the extended Kalman filter sensor fusion procedure.
-
-        """
-
-        lid_i, lid_state = self.initialize_lidar()
-
-        t = self.imu_t[0]  # initialize time step
-        st = round(time.time()) # initialize runtime
-
-        print("Initiating Kalman filter loop...")
-        for k in range(1, self.n):
-
-            # Progress report
-            if k % 100 == 0:
-                tm_new = round(time.time())
-                tm_el = tm_new - st
-                tm_rm = (self.n-k)*tm_el//k
-                print("Iteration {0}/{1}: Time elapsed {2}m{3}sec - Est. time remaining {4}m{5}sec".format(k, self.n, tm_el//60, tm_el%60, tm_rm//60, tm_rm%60))
-
-            delta_t = (self.imu_t[k] - self.imu_t[k-1])
-
-            # Assign previous state
-            p_km = self.p_est[k-1].reshape(3,1)
-            v_km = self.v_est[k-1].reshape(3,1)
-            q = self.imu_q[k,:].reshape(4,1)
-            del_u_km = self.del_u_est[k-1].reshape(6,1)
-            quat = Quaternion(*q).normalize()
-            C_ns = quat.to_mat()
-
-            # Assign control inputs and calibrate with estimated sensor error
-            f_km = self.imu_f[k-1].reshape(3,1) - del_u_km[:3]
-            w_km = self.imu_w[k-1].reshape(3,1) - del_u_km[3:]
-
-            # Update state
-            p_check = p_km + delta_t * v_km + delta_t**2/2 * (C_ns.dot(f_km) - self.g.reshape(3,1))
-            v_check = v_km + delta_t * (C_ns.dot(f_km) - self.g.reshape(3,1))
-            q_check = q
-            del_u_check = del_u_km
-
-            # Linearize motion model
-            F, L = SLAM.state_space_model(f_km, C_ns, delta_t)
-
-            # Propagate uncertainty
-            p_cov_km = self.p_cov[k-1,:,:]
-            p_cov_check = F.dot(p_cov_km).dot(F.T) + L.dot(self.Q_imu).dot(L.T)
-
-            # Check availability of LIDAR measurements
-            if lid_i != len(self.lid_r) and t >= self.lid_t[lid_i]:
-
-                if self.algorithm == "icp":
-                    y_k = SLAM.icp_state(self.gf, self.lid_r[lid_i], lid_state)
-                if self.algorithm == "feature":
-                    y_k = SLAM.feature_state(self.lid_r[lid_i-1], self.lid_r[lid_i], lid_state)
-
-                new_state = SLAM.measurement_update(y_k, p_check, v_check,
-                                                    q_check, del_u_check,
-                                                    p_cov_check, self.R_lid)
-                p_check, v_check, q_check, p_cov_check, del_u_check, lid_state = new_state
-
-                if self.algorithm == "feature":
-                    x_hat = p_check[0,0]
-                    y_hat = p_check[1,0]
-                    yaw_hat = Quaternion(*q_check).normalize().to_euler()[2,0]
-                    update_map(self.gf, self.lid_r[lid_i], x_hat, y_hat, yaw_hat)
-
-                lid_i += 1
-
-            # Store into state and uncertainty arrays
-            self.p_est[k,:] = p_check.reshape(3,)
-            self.v_est[k,:] = v_check.reshape(3,)
-            self.q_est[k,:] = q_check.reshape(4,)
-            self.del_u_est[k,:] = del_u_check.reshape(6,)
-            self.p_cov[k,:,:] = p_cov_check
-
-            # Increment time
-            t += delta_t
-            
-            # Print real-time position (x, y)
-            print(f"Real-time Position: x = {self.p_est[k, 1]:.2f}, y = {self.p_est[k, 0]:.2f}")
-
-        # Report finished progress
-        tm_el = round(time.time()) - st
-        print("Finished iterating after {0}m{1}sec".format(tm_el//60, tm_el%60))
-        
+ 
     def ekf_real_time(self, manager_data):
         """
         Extended Kalman Filter adapted for real-time sensor fusion
-        with LIDAR, quaternions, and IMU (accelerometer, gyroscope, magnetometer).
+        with LIDAR (providing only x, y), quaternions, and IMU (accelerometer, gyroscope, magnetometer).
         """
 
-        # Initialize state and covariance
-        p_km = np.zeros((3, 1))  # Initial position
-        v_km = np.zeros((3, 1))  # Initial velocity
+        # Initialize state and covariance (3D position, 3D velocity, and biases)
+        p_km = np.zeros((3, 1))  # Initial position (x, y, z)
+        v_km = np.zeros((3, 1))  # Initial velocity (vx, vy, vz)
         q_km = np.array([1, 0, 0, 0]).reshape(4, 1)  # Initial quaternion (no rotation)
         del_u_km = np.zeros((6, 1))  # Sensor biases (accelerometer, gyroscope)
-        
+
         self.n = 0
 
-        # Initialize covariance
-        p_cov_km = np.eye(15) * 0.1  # 15x15 state covariance
+        # Initialize covariance (6x6 for 3D position, 3D velocity, and biases)
+        p_cov_km = np.eye(6) * 0.1  
 
         # Start real-time loop
         print("Initiating real-time Kalman filter loop...")
         prev_time = time.time()
 
         while True:
-            self.n =+ 1
+            # Get IMU and LiDAR data in real-time
+            imu_data = manager_data.get_current_imu()  # Fetch IMU data (accel, gyro, magnetometer)
+            quaternion = manager_data.get_current_quaternions()  # Fetch quaternion data (orientation)
+            lidar_data = manager_data.get_current_cloud()  # Fetch LIDAR data (point cloud with x, y)
+
+            imu_data['acc'] = np.array(imu_data['acc'])
+            imu_data['gyro'] = np.array(imu_data['gyro'])
+            self.n += 1
             current_time = time.time()
             delta_t = current_time - prev_time
             prev_time = current_time
 
-            # Retrieve real-time data
-            imu_data = self.get_current_imu()  # Fetch IMU data (accel, gyro, magnetometer)
-            quaternion = self.get_current_quaternions()  # Fetch quaternion data (orientation)
-            lidar_data = self.get_current_cloud()  # Fetch LIDAR data (point cloud)
-            # IMU calibration and state propagation
-            f_km = imu_data['acc'] - del_u_km[:3]
-            w_km = imu_data['gyro'] - del_u_km[3:]
+            # IMU calibration and state propagation (3D)
+            f_km = imu_data['acc'] - del_u_km[:3].flatten()  # 3D acceleration
+            w_km = imu_data['gyro'] - del_u_km[3:]  # 3D angular velocity
             quat = Quaternion(*quaternion).normalize()
-            C_ns = quat.to_mat()
+            C_ns = quat.to_mat()  # 3x3 rotation matrix
 
-            # Propagate state
-            p_check = p_km + delta_t * v_km + (delta_t ** 2 / 2) * (C_ns.dot(f_km) - self.g.reshape(3, 1))
-            v_check = v_km + delta_t * (C_ns.dot(f_km) - self.g.reshape(3, 1))
+            # Propagate state based on IMU data (3D position and velocity)
+            p_check = p_km + delta_t * v_km + (delta_t ** 2 / 2) * (C_ns.dot(f_km) - self.g.reshape(3, 1))  # 3D position
+            v_check = v_km + delta_t * (C_ns.dot(f_km) - self.g.reshape(3, 1))  # 3D velocity
             q_check = quaternion
             del_u_check = del_u_km
 
             # Linearize motion model
             F, L = SLAM.state_space_model(f_km, C_ns, delta_t)
 
-            # Propagate uncertainty
+            # Ensure F has the correct size (6x6)
+            if F.shape != (6, 6):
+                raise ValueError(f"Shape mismatch: F should be 6x6, but got {F.shape}")
+
+            # Propagate uncertainty (3D state)
             p_cov_check = F.dot(p_cov_km).dot(F.T) + L.dot(self.Q_imu).dot(L.T)
 
-            # LIDAR measurement update
-            if lidar_data is not None:
-                y_k = self.process_lidar_data(lidar_data)  # Extract position/feature from point cloud
+            # LIDAR measurement update - Only x, y (2D)
+            if lidar_data is not None and len(lidar_data) > 0:
+                y_k = self.process_lidar_data(lidar_data)  # Extract position (x, y) from point cloud
                 new_state = SLAM.measurement_update(
                     y_k, p_check, v_check, q_check, del_u_check, p_cov_check, self.R_lid
                 )
@@ -461,13 +431,35 @@ class SLAM:
             # Store updated state
             p_km, v_km, q_km, del_u_km, p_cov_km = p_check, v_check, q_check, del_u_check, p_cov_check
 
-            # Print real-time position
+            # Print real-time position (3D)
             print(f"Real-time Position: x = {p_km[0, 0]:.2f}, y = {p_km[1, 0]:.2f}, z = {p_km[2, 0]:.2f}")
 
             # Termination condition (optional)
             if self.termination_condition_met():
                 break
 
+
+    def process_lidar_data(self, lidar_data):
+        """
+        Processes the LiDAR point cloud data and extracts the (x, y) position.
+        Since the LiDAR only provides (x, y), we'll use the average position
+        of the point cloud or another appropriate method.
+        """
+        
+        # Konwersja listy na NumPy array
+        lidar_data = np.array(lidar_data)
+
+        # Example: Assuming lidar_data is a list of points (x, y)
+        # We can use the average position of all points as the measurement
+        x_vals = lidar_data[:, 0]  # x coordinates of LiDAR points
+        y_vals = lidar_data[:, 1]  # y coordinates of LiDAR points
+
+        # Compute the average position
+        x_avg = np.mean(x_vals)
+        y_avg = np.mean(y_vals)
+
+        # Return the position (x, y) as a measurement (still 2D, but it's part of 3D state)
+        return np.array([x_avg, y_avg]).reshape(2, 1)
         
 
 
@@ -679,82 +671,43 @@ class SLAM:
         y_k = np.array([x_lid, y_lid, head_lid]).reshape(3,1)
         return y_k
 
-    def measurement_update(y_k, p_check, v_check, q_check, del_u_check,
-                           p_cov_check, sensor_var):
+    def measurement_update(y_k, p_check, v_check, q_check, del_u_check, p_cov_check, R_lid):
         """
-        Updates the system state with measurement correction from LiDAR scan
-        matching procedure.
-
+        Performs the measurement update step of the Extended Kalman Filter for sensor fusion.
+        
         Args:
-            y_k [1x3 Numpy array]:
-                Position (x and y-coordinate) and orientation state of the
-                system.
-            p_check [3x1 Numpy array]:
-                Estimated position state of the current time step.
-            v_check [3x1 Numpy array]:
-                Estimated velocity state of the current time step.
-            q_check [4x1 Numpy array]:
-                Estimated orientation state (in quaternion representation) of
-                the current time step.
-            del_u_check [6x1 Numpy array]:
-                Estimated bias state of accelerometer and gyroscope of the
-                current time step.
-            p_cov_check [15x15 Numpy array]:
-                Estimated state covariance matrix of the current time step.
-            sensor_var [3x3 Numpy array]:
-                Sensor covariance matrix of the LiDAR sensor.
+            y_k [2x1 or 3x1 Numpy array]: Measurement from the sensor (LIDAR)
+            p_check [6x1 Numpy array]: Predicted position and velocity
+            v_check [6x1 Numpy array]: Predicted velocity
+            q_check [4x1 Numpy array]: Quaternion representing orientation
+            del_u_check [6x1 Numpy array]: Sensor biases
+            p_cov_check [6x6 Numpy array]: Predicted covariance matrix
+            R_lid [2x2 or 3x3 Numpy array]: Sensor noise covariance
 
         Returns:
-            p_hat [3x1 Numpy array]:
-                Corrected (sensor fused) position state.
-            v_hat [3x1 Numpy array]:
-                Corrected (sensor fused) velocity state.
-            q_hat [4x1 Numpy array]:
-                Corrected (sensor fused) orientation state (in quaternion
-                representation).
-            p_cov_check [15x15 Numpy array]:
-                Corrected (sensor fused) state covariance matrix.
-            del_u_hat [6x1 Numpy array]:
-                Corrected (sensor fused) bias state of accelerometer and
-                gyroscope.
-            new_lid_state [3x0 (1D) Numpy array]:
-                1D Numpy array consisting of the x and y position and heading
-                of the new measurement update.
+            Updated state and covariance
         """
-
-        # Load measurement model Jacobian matrix H
-        H = SLAM.H()
+        
+        # Jacobian H of the measurement model w.r.t. state
+        H = np.zeros((6, 3))  # For 3D (x, y, z) measurements, the Jacobian should be (6, 3)
+        
+        # Compute H (Jacobian matrix) for 3D case (position, velocity)
+        # For simplicity, we're assuming the relationship between position and measurements is linear
+        H[:3, :] = np.eye(3)
+        
+        # Measurement residual (innovation)
+        y_k_pred = p_check[:3]  # Predicted position
+        y_residual = y_k - y_k_pred  # Residual between measurement and prediction
 
         # Compute Kalman gain
-        K_k = p_cov_check.dot(H.T).dot(inv(H.dot(p_cov_check).dot(H.T) + sensor_var))
-
-        # Bundle up state
-        phi_check = Quaternion(*q_check).normalize().to_euler() # convert to Euler angles
-        X_check = np.vstack((p_check[:2], phi_check[2])) # bundle up state into one single array
-
-        # Calculate change of state
-        dx_k = K_k.dot(y_k - X_check)
-
-        # Unpack change of state into components
-        dp_k = dx_k[:3]
-        dv_k = dx_k[3:6]
-        dphi_k = dx_k[6:9]
-        d_u_check = dx_k[9:]
-
-        # Correct predicted state
-        p_hat = p_check + dp_k
-        v_hat = v_check + dv_k
-        q_hat = Quaternion(euler=dphi_k).normalize().quat_mult(q_check)
-        del_u_hat = del_u_check + d_u_check
-
-        # Compute corrected covariance
-        p_cov_hat = (np.eye(15) - K_k.dot(H)).dot(p_cov_check)
-
-        # Collate new LiDAR state estimate
-        yaw_hat = phi_check[2] + dphi_k[2]
-        new_lid_state = np.hstack([p_hat[:2].reshape(2,), yaw_hat])
-
-        return p_hat, v_hat, q_hat, p_cov_hat, del_u_hat, new_lid_state
+        S = H.dot(p_cov_check).dot(H.T) + R_lid
+        K_k = p_cov_check.dot(H.T).dot(np.linalg.inv(S))
+        
+        # Update the state estimate
+        p_check_new = p_check + K_k.dot(y_residual)
+        p_cov_check_new = (np.eye(6) - K_k.dot(H)).dot(p_cov_check)
+        
+        return p_check_new, p_cov_check_new
 
 
     def state_space_model(imu_f, C_ns, delta_t):
@@ -775,25 +728,46 @@ class SLAM:
                 previous one.
 
         Returns:
-            F [15x15 Numpy array]:
+            F [6x6 Numpy array]:
                 State transition matrix of the current time step.
-            L [15x12 Numpy array]:
+            L [6x12 Numpy array]:
                 Noise gain matrix of the current time step.
         """
+        
+        print("imu_f shape:", imu_f.shape)
+        print("C_ns shape:", C_ns.shape)
+        print("C_ns.dot(imu_f) shape:", (C_ns.dot(imu_f)).shape)
+        
+        if imu_f.ndim != 1 or imu_f.shape[0] != 3:
+            raise ValueError("imu_f must be a 1D array with exactly 3 elements.")
+        
+        # F: State transition matrix (6x6) for 3D position and 3D velocity
+        F = np.eye(6)
 
-        F = np.eye(15)
-        F[:3,3:6] = np.eye(3)*delta_t
-        F[3:6,6:9] = skew_symmetric(C_ns.dot(imu_f))*delta_t
-        F[3:6,9:12] = C_ns*delta_t
-        F[6:9,12:] = -C_ns*delta_t
+        # First 3 rows: Position update (linear part)
+        F[:3, 3:6] = np.eye(3) * delta_t  # Position depends on velocity and time step
 
-        # L: noise gain matrix
-        L = np.zeros([15,12])
-        L[3:6,:3] = C_ns*delta_t
-        L[6:9,3:6] = C_ns*delta_t
-        L[9:,6:] = np.eye(6)
+        # Next 3 rows: Velocity update (linear part)
+        F[3:6, 3:6] = np.eye(3)  # Velocity is constant in the absence of forces
+
+        # Calculate skew-symmetric matrix from force and orientation
+        skew_matrix = skew_symmetric(C_ns.dot(imu_f).flatten()) * delta_t
+        F[3:6, 0:3] = skew_matrix  # Velocity update depends on specific force
+
+        # L: Noise gain matrix (6x12)
+        L = np.zeros([6, 12])
+
+        # Sensitivity of velocity to IMU accelerometer noise
+        L[3:6, :3] = C_ns * delta_t
+
+        # Sensitivity of position and velocity to IMU gyro and accelerometer noise
+        L[3:6, 3:6] = C_ns * delta_t  # Sensitivity of velocity to gyro and accelerometer
+        L[0:3, 6:9] = np.eye(3)  # Sensitivity of position to velocity errors
+        L[3:6, 9:] = np.eye(3)  # Sensitivity of velocity to accelerometer errors
 
         return F, L
+
+
 
 
     def H():
