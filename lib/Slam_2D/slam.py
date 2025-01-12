@@ -378,9 +378,14 @@ class SLAM:
 
         self.n = 0
 
-        # Initialize covariance (6x6 for 3D position, 3D velocity, and biases)
-        p_cov_km = np.eye(6) * 0.1  
+        # State vector now includes position, velocity, quaternion, and biases
+        state_dim = 3 + 3 + 4 + 6  # 3 position + 3 velocity + 4 quaternion + 6 biases
+        p_cov_km = np.eye(state_dim) * 0.1  # Initialize covariance matrix
 
+        # Initialize noise covariance matrices
+        self.Q_imu = np.eye(6) * 0.01  # IMU process noise (accel and gyro)
+        self.R_lid = np.eye(3) * 0.05  # LiDAR measurement noise (x, y, z)
+    
         # Start real-time loop
         print("Initiating real-time Kalman filter loop...")
         prev_time = time.time()
@@ -389,44 +394,73 @@ class SLAM:
             # Get IMU and LiDAR data in real-time
             imu_data = manager_data.get_current_imu()  # Fetch IMU data (accel, gyro, magnetometer)
             quaternion = manager_data.get_current_quaternions()  # Fetch quaternion data (orientation)
-            lidar_data = manager_data.get_current_cloud()  # Fetch LIDAR data (point cloud with x, y)
+            lidar_data = manager_data.get_current_cloud()  # Fetch LIDAR data (point cloud with x, y, z)
 
             imu_data['acc'] = np.array(imu_data['acc'])
             imu_data['gyro'] = np.array(imu_data['gyro'])
             self.n += 1
+            
             current_time = time.time()
             delta_t = current_time - prev_time
             prev_time = current_time
 
             # IMU calibration and state propagation (3D)
             f_km = imu_data['acc'] - del_u_km[:3].flatten()  # 3D acceleration
-            w_km = imu_data['gyro'] - del_u_km[3:]  # 3D angular velocity
-            quat = Quaternion(*quaternion).normalize()
-            C_ns = quat.to_mat()  # 3x3 rotation matrix
+            w_km = imu_data['gyro'] - del_u_km[3:].flatten()  # 3D angular velocity
+            
+             # Update quaternion based on angular velocity
+            quat = Quaternion(*q_km.flatten()).normalize()
+            omega = np.array([0, *w_km])  # Extend angular velocity for quaternion multiplication
+            q_dot = 0.5 * quat * Quaternion(*omega)
+            q_check = (quat + q_dot * delta_t).normalize()
+            
+            # Compute rotation matrix from quaternion
+            C_ns = q_check.to_mat()
 
             # Propagate state based on IMU data (3D position and velocity)
             p_check = p_km + delta_t * v_km + (delta_t ** 2 / 2) * (C_ns.dot(f_km) - self.g.reshape(3, 1))  # 3D position
             v_check = v_km + delta_t * (C_ns.dot(f_km) - self.g.reshape(3, 1))  # 3D velocity
-            q_check = quaternion
             del_u_check = del_u_km
 
             # Linearize motion model
             F, L = SLAM.state_space_model(f_km, C_ns, delta_t)
 
-            # Ensure F has the correct size (6x6)
-            if F.shape != (6, 6):
-                raise ValueError(f"Shape mismatch: F should be 6x6, but got {F.shape}")
-
+            # Ensure F has the correct size
+            if F.shape != (state_dim, state_dim):
+                raise ValueError(f"Shape mismatch: F should be {state_dim}x{state_dim}, but got {F.shape}")
+            
             # Propagate uncertainty (3D state)
             p_cov_check = F.dot(p_cov_km).dot(F.T) + L.dot(self.Q_imu).dot(L.T)
 
             # LIDAR measurement update - Only x, y (2D)
             if lidar_data is not None and len(lidar_data) > 0:
-                y_k = self.process_lidar_data(lidar_data)  # Extract position (x, y) from point cloud
+                y_k = self.process_lidar_data(lidar_data)  # Extract position (x, y, z) from point cloud
+                
+                # Measurement matrix (maps state to measurement space)
+                H = np.zeros((3, state_dim))
+                H[:3, :3] = np.eye(3)  # Only position is observed
+                
                 new_state = SLAM.measurement_update(
                     y_k, p_check, v_check, q_check, del_u_check, p_cov_check, self.R_lid
                 )
                 p_check, v_check, q_check, p_cov_check, del_u_check, _ = new_state
+                
+                # Compute Kalman gain
+                S = H.dot(p_cov_check).dot(H.T) + self.R_lid
+                K = p_cov_check.dot(H.T).dot(np.linalg.inv(S))
+                
+                 # Update state and covariance
+                residual = y_k.reshape(3, 1) - H.dot(np.vstack((p_check, v_check, q_check.flatten().reshape(-1, 1), del_u_check)))
+                state_update = K.dot(residual)
+                
+                # Apply update
+                p_check += state_update[:3]
+                v_check += state_update[3:6]
+                q_check = Quaternion(*q_check.flatten() + state_update[6:10].flatten()).normalize()
+                del_u_check += state_update[10:]
+                
+                # Update covariance
+                p_cov_check = (np.eye(state_dim) - K.dot(H)).dot(p_cov_check)
 
             # Store updated state
             p_km, v_km, q_km, del_u_km, p_cov_km = p_check, v_check, q_check, del_u_check, p_cov_check
