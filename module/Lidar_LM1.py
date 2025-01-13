@@ -112,17 +112,19 @@ class Lidar_LM1:
                     timestamp = lidar_cloud['timestamp']
                     
                     packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
+                    #print(f"Amount points: {len(points)}")
+                    
                     temp_cloud = []
 
                     for point in points:
                         x, y, z, intensity, time, ring = point
                         point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
                         packed_data.extend(point_data) 
-                        temp_cloud.append((x,y))
+                        temp_cloud.append((x,y,z))
                         
                     #print(f"{x},{y},{z},{intensity}, {time}, {ring}")
                         
-                    self.current_cloud[:] = temp_cloud # 2D 
+                    self.current_cloud[:] = temp_cloud # 3D 
                     self.mqtt_cloud_queue.put(packed_data)
                     
                 else:

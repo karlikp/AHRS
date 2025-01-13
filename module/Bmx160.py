@@ -15,6 +15,7 @@ class Bmx160:
         self.current_imu = []
         self.mqtt_imu_queue = queue.Queue() 
         self.stby_imu = []
+        self.calibre_data_ready = False
         
         self.sensor = BMX160(1)
         self.i2cbus = smbus.SMBus(bus)
@@ -28,35 +29,43 @@ class Bmx160:
         return self.topic
     
     def save_to_queue(self):
-            try:
-                data = self.sensor.get_all_data()
+        try:
+            # Initialize calibre_data list if not already done
+            if not hasattr(self, "calibre_data"):
+                self.calibre_data = []  # List to store the first 100 readings
 
-                imu_data = [
-                    round(data[0], 2), round(data[1], 2), round(data[2], 2),               #magnetomert: xyz
-                    round(data[3], 2), round(data[4], 2), round(data[5], 2),               #gyroscope: xyz
-                    round(data[6], 2), round(data[7], 2), round(data[8], 2)                #accelerometer: xyz 
-                    ] 
-                
-                self.current_imu = {
-                    'mag': [round(data[0], 2), round(data[1], 2), round(data[2], 2)],  # magnetometr: x, y, z
-                    'gyro': [round(data[3], 2), round(data[4], 2), round(data[5], 2)],  # żyroskop: x, y, z
-                    'acc': [round(data[6], 2), round(data[7], 2), round(data[8], 2)]   # akcelerometr: x, y, z
-                }
-                
-                # if len(self.stby_imu) < 700:
-                    
+            data = self.sensor.get_all_data()
+
+            # Prepare IMU data
+            imu_data = [
+                round(data[0], 2), round(data[1], 2), round(data[2], 2),               # magnetometer: xyz
+                round(data[3], 2), round(data[4], 2), round(data[5], 2),               # gyroscope: xyz
+                round(data[6], 2), round(data[7], 2), round(data[8], 2)                # accelerometer: xyz
+            ]
+
+            # Organize data into a dictionary for easier access
+            self.current_imu = {
+                'mag': [round(data[0], 2), round(data[1], 2), round(data[2], 2)],  # magnetometer: x, y, z
+                'gyro': [round(data[3], 2), round(data[4], 2), round(data[5], 2)],  # gyroscope: x, y, z
+                'acc': [round(data[6], 2), round(data[7], 2), round(data[8], 2)]   # accelerometer: x, y, z
+            }
             
-                #     self.stby_imu.append(imu_slam)
-                # else:
+            #debug print
+            #print(self.current_imu)
 
-                #`bytearray`(format: 9 floatów)
-                packed_data = bytearray(struct.pack('9f', *imu_data))
-                
-                self.mqtt_imu_queue.put(packed_data)
+            # Save the first 100 readings to calibre_data
+            if len(self.calibre_data) < 100:
+                self.calibre_data.append(self.current_imu)
+            else:
+                self.calibre_data_ready = True
 
-            except Exception as e:
-                print(f"Error while saving BMX160 data to queue: {e}")
+            # Serialize data into bytearray for MQTT
+            packed_data = bytearray(struct.pack('9f', *imu_data))
+            self.mqtt_imu_queue.put(packed_data)
 
+        except Exception as e:
+            print(f"Error while saving BMX160 data to queue: {e}")
+            
     def get_data_from_queue(self):
         if not self.mqtt_imu_queue.empty():
             return self.mqtt_imu_queue.get()
@@ -68,6 +77,9 @@ class Bmx160:
         return self.current_imu
     
     # 0-2 xyz gyroscope; 3-5 xyz accelerometer
-    def get_stby_imu(self):
-        print(type(self.stby_imu))
-        return self.stby_imu
+    def get_calibre_data(self):
+        return self.calibre_data
+    
+    def get_calibre_status(self):
+        return self.calibre_data_ready
+    

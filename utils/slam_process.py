@@ -5,6 +5,9 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))
 from lib.Slam_2D.slam import SLAM
 
+sys.path.append(os.path.join(os.path.dirname(__file__), 'module'))
+from module.IMU_calibrator import IMU_calibrator
+
 def slam_process(data_manager):
     
     algorithm = "icp"
@@ -17,10 +20,11 @@ def slam_process(data_manager):
     slam.initialize_imu(stby_imu, stby_quaternions) 
     """
     
-    # Processing data
-    #slam.set_params()
-    #slam.initialize_arrays()    
-    slam.ekf_real_time(data_manager)
+    #static calibration for IMU
+    imu_calibrator = IMU_calibrator()
+    imu_calibrator.calibrate_imu_once(data_manager)
+    
+    slam.ekf_real_time(data_manager, imu_calibrator)
     
     #slam.postprocess()
 

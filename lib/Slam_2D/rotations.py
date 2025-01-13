@@ -76,6 +76,34 @@ class Quaternion():
             # self.x = cr * sp * sy + sr * cp * cy
             # self.y = cr * sp * cy - sr * cp * sy
             # self.z = cr * cp * sy + sr * sp * cy
+    
+    def to_numpy(self):
+        """ Return numpy wxyz representation. """
+        return np.array([self.w, self.x, self.y, self.z])
+
+            
+    def __mul__(self, other):
+        if isinstance(other, (float, int)):  # Skalowanie kwaternionu przez liczbę
+            return Quaternion(self.w * other, self.x * other, self.y * other, self.z * other)
+        elif isinstance(other, Quaternion):  # Mnożenie dwóch kwaternionów
+            return self.quat_mult(other, out='Quaternion')
+        else:
+            raise TypeError(f"Unsupported operand type(s) for *: 'Quaternion' and '{type(other).__name__}'")
+        
+    def __rmul__(self, other):
+        return self.__mul__(other)
+    
+    def __add__(self, other):
+        if isinstance(other, Quaternion):
+            return Quaternion(
+                self.w + other.w,
+                self.x + other.x,
+                self.y + other.y,
+                self.z + other.z
+            )
+        else:
+            raise TypeError(f"Unsupported operand type(s) for +: 'Quaternion' and '{type(other).__name__}'")
+
 
     def __repr__(self):
         return "Quaternion (wxyz): [%2.5f, %2.5f, %2.5f, %2.5f]" % (self.w, self.x, self.y, self.z)
