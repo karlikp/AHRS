@@ -12,18 +12,17 @@ if __name__ == "__main__":
     data_manager.mqtt_connect()
 
     sensor_thread = threading.Thread(target = data_manager.sensor_reading)
-    lidar_thread = threading.Thread(target = data_manager.lidar_reading)
-
     sensor_thread.start()
+    
+    data_manager.bmx160.calibre_ready_event.wait() # Waiting for IMU data to calibration
+    
+    lidar_thread = threading.Thread(target = data_manager.lidar_reading)
     lidar_thread.start()
 
     time.sleep(5)  
 
-    # if manager.lidar_is_dirty:
-    #     print("lidar too dirty, exit")
-    #     exit()
-
     SLAM_thread = threading.Thread(target = slam_process, args = (data_manager,))
+    
     #AHRS_mqtt = threading.Thread(target = data_manager.send_AHRS_data)
     #Lidar_mqtt = threading.Thread(target = data_manager.send_Lidar_data)
     

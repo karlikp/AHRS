@@ -6,7 +6,7 @@ class IMU_calibrator:
         self.acc_bias = None
         self.gyro_bias = None
         self.mag_bias = None
-        self.g = 9.81  # Gravitational acceleration [m/s^2]
+        self.g = -9.81  # Gravitational acceleration [m/s^2]
 
     def calibrate_imu(self, imu_data_samples):
         """
@@ -89,6 +89,7 @@ class IMU_calibrator:
         # Collect stationary IMU samples
         while (not manager_data.get_calibre_imu_status()):
             time.sleep(1)
+            print(f"waiting for calibre data")
             
         stationary_samples = manager_data.get_calibre_imu()
 

@@ -6,9 +6,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.linalg import inv
-from .rotations import Quaternion, skew_symmetric
-from .feature_scan import ScanFeature, update_state, update_map
-from .icp import GlobalFrame, wraptopi
+# from .rotations import Quaternion, skew_symmetric
+# from .feature_scan import ScanFeature, update_state, update_map
+# from .icp import GlobalFrame, wraptopi
 from .functions import *
 import time
 
@@ -49,11 +49,7 @@ class SLAM:
         
         self.max_iterations = 1000  # Domyślny limit iteracji
         self.current_iteration = 0
-        # self.imu_file = imu_file
-        # self.lid_file = lid_file
-        # self.gt_traj = pd.read_csv(gt_traj_file, header=None, usecols=range(2)).values
-        # self.gt_wall = pd.read_csv(gt_env_file, header=None, usecols=range(2)).values
-
+       
 
     ########################
     ### Instance methods ###
@@ -64,306 +60,7 @@ class SLAM:
         self.current_iteration += 1
         return self.current_iteration >= self.max_iterations
 
-    def get_imu_data_realtime(self, imu_data_stream, stby=700, offset_quat=True, gravity_bias_est=False):
-        """
-        Reads, cleans, and assigns IMU data to object attributes in real-time.
-
-        Args:
-            imu_data_stream (list):
-                A real-time list containing IMU data with the following format:
-                [
-                    {"timestamp": <float>, 
-                    "q_x": <float>, "q_y": <float>, "q_z": <float>, "q_w": <float>,
-                    "om_x": <float>, "om_y": <float>, "om_z": <float>,
-                    "a_x": <float>, "a_y": <float>, "a_z": <float>
-                    },
-                    ...
-                ]
-            stby (int):
-                Number of initial IMU readings (standby readings) before first movement. Default: 700.
-            offset_quat (bool):
-                If True, the quaternion readings will be offset such that
-                the initial heading is zero. Default: True.
-            gravity_bias_est (bool):
-                If True, the initial bias estimation, including estimating
-                gravity component in the z-direction, will be done by averaging
-                across the first ´stby´ number of IMU readings. Default: False.
-        """
-
-        # Convert the stream of dictionaries into structured numpy arrays
-        imu = pd.DataFrame(imu_data_stream)  # Convert list of dicts to DataFrame for easier manipulation
-
-        # Ensure the required columns are present
-        required_columns = ["timestamp", "q_x", "q_y", "q_z", "q_w", 
-                            "om_x", "om_y", "om_z", "a_x", "a_y", "a_z"]
-        if not all(col in imu.columns for col in required_columns):
-            raise ValueError(f"IMU data is missing required fields. Expected fields: {required_columns}")
-
-        # Assign arrays for timestamp, linear acceleration, and rotational velocity
-        self.imu_t = np.round(imu["timestamp"].values / 1e9, 3)  # converting to seconds with three decimal places
-        self.imu_f = imu[["a_x", "a_y", "a_z"]].values
-        self.imu_w = imu[["om_x", "om_y", "om_z"]].values
-        self.imu_q = imu[["q_w", "q_x", "q_y", "q_z"]].values
-        self.n = self.imu_f.shape[0]  # number of IMU readings
-
-        # Offset quaternion readings to ensure initial heading is zero
-        if offset_quat:
-            # Transform quaternions to Euler angles
-            phi = np.ndarray((self.n, 3))
-            for i in range(self.n):
-                phi[i, :] = Quaternion(*self.imu_q[i, :]).normalize().to_euler()
-
-            # Shift yaw angle such that the initial yaw equals zero
-            inityaw = np.mean(phi[:stby, 2])  # Estimated initial yaw
-            tf_yaw = wraptopi(phi[:, 2] - inityaw)  # Transformed yaw
-
-            # Transform Euler angles back to quaternions
-            phi[:, 2] = tf_yaw
-            for i in range(self.n):
-                self.imu_q[i, :] = Quaternion(euler=phi[i, :]).normalize().to_numpy()
-
-        # Estimate gravity bias if required
-        if gravity_bias_est:
-            imu_f_trans = np.ndarray((stby, 3))
-            for i in range(stby):
-                C_ns = Quaternion(*self.imu_q[i, :]).normalize().to_mat()
-                imu_f_trans[i] = C_ns.dot(self.imu_f[i, :])
-
-            self.g = np.mean(imu_f_trans, axis=0)  # bias + gravity
-        else:
-            self.g = np.array([0, 0, 9.80665])  # gravity
-
-
-    def get_lidar_data(self):
-        """
-        Loads and assigns LiDAR data to object attributes.
-
-        """
-
-        lid = pd.read_csv(self.lid_file, usecols=[2] + list(range(11, 693)))
-
-        # Assign arrays for timestamp and range data
-        self.lid_t = np.round(lid["field.header.stamp"].values / 1e9, 3) # converting to seconds with three decimal places
-        self.lid_r = lid.iloc[:,1:].values # WK
-
-
-    def plot_ground_truth(self):
-        """
-        Plots a visualization of the ground truth trajectory and environment.
-
-        """
-
-        fig = plt.figure(figsize=(9,7))
-        plt.plot(self.gt_traj[:,0], self.gt_traj[:,1], 'r.-', markersize=1, label="Trajectory")
-        plt.plot(self.gt_traj[0,0], self.gt_traj[0,1], 'ro', markersize=10, label="Trajectory start")
-        plt.plot(self.gt_traj[-1,0], self.gt_traj[-1,1], 'rx', markersize=12, label="Trajectory end")
-        plt.plot(self.gt_wall[:2,0], self.gt_wall[:2,1], 'k-', linewidth=1, label="Maze walls")
-        plt.plot(self.gt_wall[:,0], self.gt_wall[:,1], 'k.', markersize=0.5)
-        plt.xlim(-0.1, 1.7)
-        plt.ylim(-0.1, 1.3)
-        plt.legend(loc="right")
-        plt.grid(alpha=0.5)
-        plt.title("Ground truth of experiment")
-        plt.show()
-
-
-    def set_params(self, imu_f=0.05, imu_w=10*np.pi/180,
-                   imu_bias_f=0.0005, imu_bias_w=0.01*np.pi/180,
-                   lid_p=0.01, lid_r=0.5*np.pi/180):
-        """
-        Sets standard deviation parameters and constructs sensor covariance
-        matrices Q_imu (process noise covariance) and R_lid (measurement noise
-        covariance).
-
-        Args:
-            imu_f (float):
-                Standard deviation associated with uncertainty of inertial
-                accelerometer sensor in [m/s^2]. Default: 0.05 m/s^2.
-            imu_w (float):
-                Standard deviation associated with uncertainty of inertial
-                gyroscope sensor in [rad/s]. Default: 1.745e-1 rad/s ≈ 10°/s.
-            imu_bias_f (float):
-                Standard deviation associated with uncertainty of the bias in
-                inertial accelerometer sensor in [m/s^2]. Default: 0.0005 m/s^2.
-            imu_bias_w (float):
-                Standard deviation associated with uncertainty of the bias in
-                inertial gyroscope sensor in [rad/s].
-                Default: 1.745e-4 rad/s ≈ 0.01°/s.
-            lid_p (float):
-                Standard deviation associated with uncertainty of position
-                estimate from LiDAR scan matching algorithm in [m].
-                Default: 0.01 m.
-            lid_r (float):
-                Standard deviation associated with uncertainty of orientation
-                estimate from LiDAR scan matching algorithm in [rad].
-                Default: 8.727e-3 rad ≈ 0.5°.
-        """
-
-        # Process noise attributed to odometry
-        std_imu_f = 0.05                # [m/s^2]
-        std_imu_w = 10*np.pi/180        # [rad/s]
-        std_imu_bias_f = 0.0005         # [m/s^2]
-        std_imu_bias_w = 0.01*np.pi/180 # [rad/s]
-
-        # Measurement noise attributed to LiDAR scans
-        std_lid_p = 0.01          # [m] x and y position
-        std_lid_r = 0.5*np.pi/180 # [rad] yaw angle
-
-        # Constructs covariance arrays
-        self.Q_imu = np.diag(np.array([std_imu_f]*3 + [std_imu_w]*3 + [std_imu_bias_f]*3 + [std_imu_bias_w]*3))**2
-        self.R_lid = np.diag([std_lid_p, std_lid_p, std_lid_r])**2
-
-
-    def initialize_arrays(self):
-        """
-        Initializes state and covariance arrays. Initial covariance standard
-        deviations for the system state variables are pre-established here;
-        however, feel free to modify these directly in the procedure.
-
-        """
-
-        self.p_est = np.zeros([self.n, 3])      # position estimates
-        self.v_est = np.zeros([self.n, 3])      # velocity estimates
-        self.q_est = np.zeros([self.n, 4])      # orientation estimates as quaternions
-        self.del_u_est = np.zeros([self.n, 6])  # sensor bias estimates
-        self.p_cov = np.zeros([self.n, 15, 15]) # covariance array at each timestep
-
-        # Set initial values
-        self.p_est[0] = np.zeros((1,3))
-        self.v_est[0] = np.zeros((1,3))
-        self.q_est[0] = self.imu_q[0,:]
-        self.del_u_est[0] = np.zeros((1,6))
-
-        # Initial uncertainties in standard deviations
-        p_cov_p = 0.02*np.ones(3,)                # [m] position
-        p_cov_v = 0.01*np.ones(3,)                # [m/s] velocity
-        p_cov_q = np.array([1, 1, 20])*np.pi/180  # [rad] roll, pitch and yaw angles
-        p_cov_bias_f = 0.02*np.ones(3,)           # [m/s^2] accelerometer biases
-        p_cov_bias_w = 0.05*np.ones(3,)*np.pi/180 # [rad/s] gyroscope biases
-
-        self.p_cov[0] = np.diag(np.hstack([p_cov_p, p_cov_v, p_cov_q, p_cov_bias_f, p_cov_bias_w]))**2
-
-    def initialize_imu(self, stby_imu, stby_quaternions, stby=700, offset_quat=True, gravity_bias_est=False):
-        """
-        Loads, cleans and assigns IMU data to object attributes.
-
-        Args:
-            stby (int):
-                Number of initial IMU readings (standby readings)
-                before first movement. Default: 700.
-            offset_quat (bool):
-                If True, the quaternion readings will be offset such that
-                initial heading is zero. Default: True.
-            gravity_bias_est (bool):
-                If True, the initial bias estimation, including estimating
-                gravity component in the z-direction, will be done by averaging
-                across the first ´stby´ number of IMU readings. Default: False
-        """
-        # Creating DataFrame table from lists   
-        imu_df = pd.DataFrame(stby_imu)
-        quaternion_df = pd.DataFrame(stby_quaternions)
-        
-        complex_imu_df = pd.concat([quaternion_df, imu_df], axis = 1)
-        
-
-        # Assign arrays for timestamp, linear acceleration and rotational velocity
-        self.imu_t = np.round(complex_imu_df.timestamp.values / 1e9, 3) # converting to seconds with three decimal places
-        self.imu_f = complex_imu_df[["a_x", "a_y", "a_z"]].values
-        self.imu_w = complex_imu_df[["om_x", "om_y", "om_z"]].values
-        self.imu_q = complex_imu_df[["q_w", "q_x", "q_y", "q_z"]].values
-        n = self.imu_f.shape[0] # number of IMU readings
-
-        if offset_quat:
-            # Transform quaternions to Euler angles
-            phi = np.ndarray((n, 3))
-            for i in range(n):
-                phi[i,:] = Quaternion(*self.imu_q[i,:]).normalize().to_euler()
-
-            # Shift yaw angle such that the inital yaw equals zero
-            inityaw = np.mean(phi[:stby,2])       # Estimated initial yaw
-            
-            """ Transformed yaw !!!"""
-            self.tf_yaw = wraptopi(phi[:,2] - inityaw) 
-
-            # Transform Euler angles back to quaternions
-            phi[:,2] = self.tf_yaw
-            for i in range(self.n):
-                self.imu_q[i,:] = Quaternion(euler=phi[i,:]).normalize().to_numpy()
-
-        if gravity_bias_est:
-            imu_f_trans = np.ndarray((stby, 3))
-            for i in range(stby):
-                C_ns = Quaternion(*self.imu_q[i,:]).normalize().to_mat()
-                imu_f_trans[i] = C_ns.dot(self.imu_f[i,:])
-
-                self.g = np.mean(imu_f_trans,0) # bias + gravity
-        else:
-            self.g = np.array([0, 0, 9.80665]) # gravity
-            
-    # def single_imu(self, stby=700, offset_quat=True, gravity_bias_est=False):
-    #     """
-    #     Loads, cleans and assigns single IMU data to object attributes.
-    #     """
-        
-
-    #     # Assign arrays for timestamp, linear acceleration and rotational velocity
-    #     self.imu_t = np.round(complex_imu_df.timestamp.values / 1e9, 3) # converting to seconds with three decimal places
-    #     self.imu_f = complex_imu_df[["a_x", "a_y", "a_z"]].values
-    #     self.imu_w = complex_imu_df[["om_x", "om_y", "om_z"]].values
-    #     self.imu_q = complex_imu_df[["q_w", "q_x", "q_y", "q_z"]].values
-    #     n = self.imu_f.shape[0] # number of IMU readings
-
-    #     if offset_quat:
-    #         # Transform quaternions to Euler angles
-    #         phi = np.ndarray((n, 3))
-    #         for i in range(n):
-    #             phi[i,:] = Quaternion(*self.imu_q[i,:]).normalize().to_euler()
-
-    #         # Transform Euler angles back to quaternions
-    #         phi[:,2] = self.tf_yaw
-    #         for i in range(self.n):
-    #             self.imu_q[i,:] = Quaternion(euler=phi[i,:]).normalize().to_numpy()
-
-    #     if gravity_bias_est:
-    #         imu_f_trans = np.ndarray((stby, 3))
-    #         for i in range(stby):
-    #             C_ns = Quaternion(*self.imu_q[i,:]).normalize().to_mat()
-    #             imu_f_trans[i] = C_ns.dot(self.imu_f[i,:])
-
-    #             self.g = np.mean(imu_f_trans,0) # bias + gravity
-    #     else:
-    #         self.g = np.array([0, 0, 9.80665]) # gravity
-            
-
-        
-    
-    def initialize_lidar(self):
-        """
-        Initializes global navigation frame with the point cloud from the first
-        LiDAR scan, and also initializes the index of the next LiDAR scan and
-        the position and heading state estimate associated with each LiDAR scan
-        (important for sensor fusion -- see ´measurement_update´.)
-
-        Returns:
-            lid_i (int):
-                Index of the next LiDAR scan to be processed.
-            lid_state [3x0 (1D) Numpy array]:
-                Initial position and heading state estimate associated with
-                LiDAR scans.
-        """
-
-        # Initialize global navigation frame with first LiDAR scan
-        if self.algorithm == "icp":
-            self.gf = GlobalFrame(self.lid_r)
-        if self.algorithm == "feature":
-            self.gf = ScanFeature(self.lid_r[0,:], frame="global")
-
-        #lid_i = 1                                    # index of next LiDAR scan
-        lid_state = np.hstack([self.p_est[0,:2], 0]) # current position and heading state estimate
-
-        return  lid_state
-
-
+ 
  
     def ekf_real_time(self, manager_data, imu_calibrator):
         """
@@ -414,6 +111,16 @@ class SLAM:
             f_km = np.expand_dims(imu_data['acc'] - del_u_km[:3].flatten(), axis=1)  # 3D acceleration jako (3, 1)
             w_km = imu_data['gyro'] - del_u_km[3:].flatten()  # 3D angular velocity
             
+            # Movement detection
+            acc_magnitude = np.linalg.norm(imu_data['acc'] - self.g)
+            gyro_magnitude = np.linalg.norm(imu_data['gyro'])
+            movement_threshold_acc = 0.2  # Adjust based on noise characteristics
+            movement_threshold_gyro = 0.1
+
+            if acc_magnitude < movement_threshold_acc and gyro_magnitude < movement_threshold_gyro:
+                print("No significant movement detected. Skipping state update.")
+                continue
+            
             # Use quaternion from sensor data instead of computing from IMU
             q_check = Quaternion(*quaternions).normalize()
             
@@ -445,7 +152,7 @@ class SLAM:
             # LIDAR measurement update - Only x, y, z
             if lidar_data is not None and len(lidar_data) > 0:
                 y_k = self.process_lidar_data(lidar_data)  # Extract position (x, y, z) from point cloud
-                print("y_k shape after process_lidar_data:", y_k.shape)  # Powinno być (3, 1)
+                #print("y_k shape after process_lidar_data:", y_k.shape)  # Powinno być (3, 1)
                 
                 # Measurement matrix (maps state to measurement space)
                 H = np.zeros((3, state_dim))
@@ -458,6 +165,12 @@ class SLAM:
                 
                 # Compute Kalman gain
                 S = H.dot(p_cov_check).dot(H.T) + self.R_lid
+                
+                # Verify residual covariance for anomaly detection
+                if np.any(np.diag(S) < 1e-6):  # Threshold to avoid singularity
+                    print("Skipping update due to small residual covariance")
+                    continue
+                
                 K = p_cov_check.dot(H.T).dot(np.linalg.inv(S))
                 
                  # Update state and covariance
@@ -495,216 +208,11 @@ class SLAM:
         x, y, z = lidar_data[0]  # Take the first point
         return np.array([[x], [y], [z]])  # Ensure (3, 1) shape
 
-        
-
-
-    def postprocess(self):
-        """
-        Post-process the SLAM results.
-
-        """
-
-        if self.algorithm == "icp":
-            self.pc_t = np.array([-self.gf.y_pc + self.gt_traj[0][0], self.gf.x_pc + self.gt_traj[0][1]]).T
-
-        if self.algorithm == "feature":
-            # Remove unsufficiently matched line segments
-            rem_lines = []
-            for i, line in enumerate(self.gf.lines):
-                if line.it < 100:
-                    rem_lines.append(line)
-
-            for line in rem_lines:
-                self.gf.lines.remove(line)
-
-            # Transform LiDAR scans in global reference frame
-            for line in self.gf.lines:
-                line.x_start, line.y_start = -line.y_start + self.gt_traj[0][0], line.x_start + self.gt_traj[0][1]
-                line.x_end, line.y_end = -line.y_end + self.gt_traj[0][0], line.x_end + self.gt_traj[0][1]
-
-        # Transform final state estimates
-        self.p_est[:,:2] = (np.array([[0,-1],[1,0]]).dot(self.p_est[:,:2].T) + self.gt_traj[0].reshape(2,1)).T
-        self.v_est[:,:2] = np.array([[0,-1],[1,0]]).dot(self.v_est[:,:2].T).T
-
-
-    def plot_results(self):
-        """
-        Plots the final SLAM results against the ground truth.
-
-        """
-
-        fig, ax = plt.subplots(figsize=(10,8))
-
-        ax.plot(self.gt_traj[:,0], self.gt_traj[:,1], 'r-', markersize=0.5, label="Ground truth trajectory")
-        ax.plot(self.gt_wall[:2,0], self.gt_wall[:2,1], 'k-', linewidth=0.5, label="Ground truth maze walls")
-        ax.plot(self.gt_wall[:,0], self.gt_wall[:,1], 'k.', markersize=0.5, alpha=0.25)
-
-        if self.algorithm == "icp":
-            plot_idx = np.random.randint(self.pc_t.shape[0], size=round(self.pc_t.shape[0]/20))
-            x_plot = self.pc_t[plot_idx,0]
-            y_plot = self.pc_t[plot_idx,1]
-            ax.plot(x_plot, y_plot, 'm.', markersize=1, label="Point cloud of walls")
-
-        if self.algorithm == "feature":
-            for i, line in enumerate(self.gf.lines):
-                if i == 0:
-                    ax.plot([line.x_start, line.x_end], [line.y_start, line.y_end], 'm--', linewidth=3, label="Estimated walls")
-                else:
-                    ax.plot([line.x_start, line.x_end], [line.y_start, line.y_end], 'm--', linewidth=3)
-
-        ax.plot(self.p_est[:,0], self.p_est[:,1], 'b-.', lw=3, label="Estimated trajectory")
-        ax.set_xlim(-0.2, 1.8)
-        ax.set_ylim(-0.2, 1.4)
-        plt.legend(loc="right", fontsize=9)
-        plt.grid(alpha=0.5)
-        start, end = ax.get_xlim()
-        ax.xaxis.set_ticks(np.arange(start, end, 0.2))
-        ax.set_title("SLAM results")
-        ax.set_xlabel("x [m]")
-        ax.set_ylabel("y [m]")
-        plt.show() #it work in block mode
-
-
-    @property
-    def RMSE_traj(self):
-        """
-        Calculates and returns the root mean squared error (RMSE) for the
-        deviation distance between the trajectory estimate and the ground truth.
-
-        Returns:
-            RMSE_traj (float):
-                Root mean squared error (RMSE) for the trajectory error.
-        """
-
-        RMSE_traj = SLAM.RMSE(self.gt_traj, self.p_est[:,:2])
-        return RMSE_traj
-
-
-    @property
-    def RMSE_wall_feature(self):
-        """
-        Calculates and returns the root mean squared error (RMSE) for the
-        deviation distance between the mapping estimate and the ground truth,
-        using the feature-based scan matching approach.
-
-        Returns:
-            RMSE_wall (float):
-                Root mean squared error (RMSE) for the maze wall error.
-        """
-
-        x_wall = np.array([])
-        y_wall = np.array([])
-
-        for line in self.gf.lines:
-            x_wall = np.hstack([x_wall, np.linspace(line.x_start, line.x_end, int(line.length*1000))])
-            y_wall = np.hstack([y_wall, np.linspace(line.y_start, line.y_end, int(line.length*1000))])
-
-        pc_t = np.vstack([x_wall, y_wall]).T
-
-        RMSE_wall = SLAM.RMSE(self.gt_wall, pc_t)
-        return RMSE_wall
-
-    @property
-    def RMSE_wall_icp(self):
-        """
-        Calculates and returns the root mean squared error (RMSE) for the
-        deviation distance between the mapping estimate and the ground truth,
-        using the ICP algorithm.
-
-        Returns:
-            RMSE_wall (float):
-                Root mean squared error (RMSE) for the maze wall error.
-        """
-
-        RMSE_wall = SLAM.RMSE(self.gt_wall, self.pc_t)
-        return RMSE_wall
-
-    def plot_traj_error(self):
-        """
-        Plots deviation error of trajectory from start to finish.
-
-        """
-
-        RMSE_traj, traj_error = SLAM.RMSE(self.gt_traj, self.p_est[:,:2], return_error_arr=True)
-        fig, ax = plt.subplots(figsize=(8,6))
-        ax.plot(np.sqrt(traj_error), 'r', label="Residual distance from ground truth")
-        ax.plot(RMSE_traj*np.ones((len(traj_error),)), 'k--', lw=1, label="RMSE = {0}m".format(round(RMSE_traj,4)))
-        ax.set_title("Deviation error of trajectory")
-        ax.set_xlabel("Time step k")
-        ax.set_ylabel("Deviation error [m]")
-        ax.set_xlim([0, len(traj_error)-1])
-        ax.set_ylim([-0.01, 0.25])
-        plt.legend(loc="upper left")
-        plt.show()
-
 
     #####################
     ### Class methods ###
     #####################
 
-    def feature_state(r_prev, r_new, prev_lid_state):
-        """
-        Obtains the position and orientation state of the system based on the
-        feature-based (line) scan matching algorithm and LiDAR scans.
-
-        Args:
-            r_prev [1D Numpy array]:
-                Range readings of the point cloud from the LiDAR scan in the
-                previous time step.
-            r_new [1D Numpy array]:
-                Range readings of the point cloud from the LiDAR scan in the
-                current time step.
-            prev_lid_state [3x0 (1D) Numpy array]:
-                1D Numpy array consisting of the x and y position and heading
-                of the previous measurement update.
-
-        Returns:
-            y_k [1x3 Numpy array]:
-                Position (x and y-coordinate) and orientation state of the
-                scdystem.
-        """
-
-        # Unpack state from previous LiDAR scan
-        x_prev = prev_lid_state[0]
-        y_prev = prev_lid_state[1]
-        head_prev = prev_lid_state[2]
-
-        # Calculate estimated state from LiDAR scans using line feature algorithm
-        x_lid, y_lid, head_lid = update_state(r_prev, r_new, x_prev, y_prev, head_prev)
-        y_k = np.array([x_lid, y_lid, head_lid]).reshape(3,1)
-        return y_k
-
-
-    def icp_state(gf, r_new, prev_lid_state):
-        """
-        Obtains the position and orientation state of the system based on the
-        ICP algorithm and LiDAR scans.
-
-        Args:
-            gf <GlobalFrame object>:
-                Instance of GlobalFrame (specified in `icp`) representing the
-                global navigation frame of the SLAM problem.
-            r_new [1D Numpy array]:
-                Range readings of the point cloud from the LiDAR scan in the
-                current time step.
-            prev_lid_state [3x0 (1D) Numpy array]:
-                1D Numpy array consisting of the x and y position and heading
-                of the previous measurement update.
-
-        Returns:
-            y_k [1x3 Numpy array]:
-                Position (x and y-coordinate) and orientation state of the
-                system.
-        """
-
-        # Unpack state from previous LiDAR scan
-        prev_lid_pose = prev_lid_state[:2]
-        head_prev = prev_lid_state[2]
-
-        # Calculate estimated state from LiDAR scans using ICP algorithm
-        x_lid, y_lid, head_lid = gf.next_scan(r_new, prev_lid_pose, head_prev)
-        y_k = np.array([x_lid, y_lid, head_lid]).reshape(3,1)
-        return y_k
 
     def measurement_update(y_k, p_check, v_check, q_check, del_u_check, p_cov_check, R_lid):
         """
@@ -732,7 +240,7 @@ class SLAM:
         # Measurement residual (innovation)
         y_k_pred = p_check  # Predicted position from the state.
         y_residual = y_k - y_k_pred  # Residual between measurement and prediction.
-        print("y_residual shape:", y_residual.shape)  # Powinno być (3, 1)
+           
         # Compute Kalman gain
         S = H.dot(p_cov_check).dot(H.T) + R_lid
         K_k = p_cov_check.dot(H.T).dot(np.linalg.inv(S))
@@ -741,9 +249,9 @@ class SLAM:
         state_update = K_k.dot(y_residual)
         
         #debug
-        print("state_update shape:", state_update.shape)  # Powinno być (16, 1)
-        print("K_k shape:", K_k.shape)  # Powinno być (16, 3)
-        print("y_residual shape:", y_residual.shape)  # Powinno być (3, 1)
+        # print("state_update shape:", state_update.shape)  # Powinno być (16, 1)
+        # print("K_k shape:", K_k.shape)  # Powinno być (16, 3)
+        # print("y_residual shape:", y_residual.shape)  # Powinno być (3, 1)
 
 
         # Extract updated states
@@ -797,49 +305,4 @@ class SLAM:
 
         return F, L
     
-    def H():
-        """
-        Returns measurement model Jacobian matrix H.
-
-        Returns:
-            H [3x15 array]: measurement model Jacobian matrix.
-        """
-
-        H = np.zeros([3, 15])
-        H[:3,:3] = np.eye(3)
-        return H
-
-
-    def RMSE(gt, est, return_error_arr=False):
-        """
-        Calculates and returns the root mean squared error (RMSE) for the
-        deviation distance between the estimate and the ground truth.
-
-        Args:
-            gt [Mx2 Numpy array]:
-                Numpy array with M rows of ground truth coordinates
-                (x-coordinate: 1st column, y-coordinate: 2nd column).
-            est [Nx2 Numpy array]:
-                Numpy array with N rows of position estimate coordinates
-                (x-coordinate: 1st column, y-coordinate: 2nd column).
-            return_error_arr (bool):
-                If True, the function also returns the list ´error´ containing
-                the errors for each estimated point. Only really makes sense for
-                trajectory.
-
-        Returns:
-            RMSE (float):
-                Root mean squared error (RMSE) of the deviation error.
-            error (list, opt.):
-                List of deviation errors for each individual estimate point.
-        """
-
-        error = []
-        for i in range(est.shape[0]):
-            d = np.min(np.sum((gt - est[i,:])**2, axis=1))
-            error.append(d)
-        MSE = sum(error)/len(error)
-        RMSE = np.sqrt(MSE)
-        if return_error_arr:
-            return RMSE, error
-        return RMSE
+    
