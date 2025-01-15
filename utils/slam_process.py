@@ -11,7 +11,7 @@ from module.IMU_calibrator import IMU_calibrator
 def slam_process(data_manager):
     
     algorithm = "icp"
-    slam = SLAM(algorithm) # imu_path, lid_path)
+    slam = SLAM(algorithm, data_manager) # imu_path, lid_path)
     
     #standby IMU
     """

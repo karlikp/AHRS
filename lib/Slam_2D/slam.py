@@ -2,15 +2,15 @@
 # Accuracy Estimation of 2D SLAM Using Sensor Fusion of LiDAR and INS
 # Author: Jan Xu
 
-import pandas as pd
+
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.linalg import inv
-# from .rotations import Quaternion, skew_symmetric
-# from .feature_scan import ScanFeature, update_state, update_map
-# from .icp import GlobalFrame, wraptopi
-from .functions import *
 import time
+from numpy.linalg import inv
+from .functions import *
+from pypointmatcher import pointmatcher as pm
+
+
 
 class SLAM:
 
@@ -18,7 +18,7 @@ class SLAM:
     ### Constructor ###
     ###################
 
-    def __init__(self, algorithm): # imu_file, lid_file),
+    def __init__(self, algorithm, manager_data): # imu_file, lid_file),
                 #  gt_traj_file="gt_data/gt_traj.csv",
                 #  gt_env_file="gt_data/gt_wall.csv"):
                 
@@ -49,6 +49,21 @@ class SLAM:
         
         self.max_iterations = 1000  # Domyślny limit iteracji
         self.current_iteration = 0
+        
+        # ICP initialize 
+        PM = pm.PointMatcher
+        DP = PM.DataPoints
+        
+        ref_cloud = manager_data.get_current_cloud()  # Fetch LIDAR data (point cloud with x, y, z)
+        ref_cloud_np = np.ref_cloud
+        
+        self.ref_cloud_dp = DP(DP.from_numpy(ref_cloud_np.T))
+        time.sleep(0.5)
+        self.icp = PM.ICP()
+        self.icp.setDefault()
+        
+        
+        
        
 
     ########################
@@ -85,6 +100,7 @@ class SLAM:
         self.Q_imu = np.eye(6) * 0.01  # IMU process noise (accel and gyro)
         self.R_lid = np.eye(3) * 0.05  # LiDAR measurement noise (x, y, z)
     
+          
         # Start real-time loop
         print("Initiating real-time Kalman filter loop...")
         prev_time = time.time()
@@ -97,7 +113,6 @@ class SLAM:
 
             # Apply calibration to raw IMU data
             imu_data = imu_calibrator.apply_calibration(raw_imu_data) 
-            print(imu_data)
                   
             imu_data['acc'] = np.array(imu_data['acc'])
             imu_data['gyro'] = np.array(imu_data['gyro'])
@@ -106,11 +121,12 @@ class SLAM:
             current_time = time.time()
             delta_t = current_time - prev_time
             prev_time = current_time
-
+            
             # IMU calibration and state propagation (3D)
             f_km = np.expand_dims(imu_data['acc'] - del_u_km[:3].flatten(), axis=1)  # 3D acceleration jako (3, 1)
             w_km = imu_data['gyro'] - del_u_km[3:].flatten()  # 3D angular velocity
             
+            """
             # Movement detection
             acc_magnitude = np.linalg.norm(imu_data['acc'] - self.g)
             gyro_magnitude = np.linalg.norm(imu_data['gyro'])
@@ -119,20 +135,14 @@ class SLAM:
 
             if acc_magnitude < movement_threshold_acc and gyro_magnitude < movement_threshold_gyro:
                 print("No significant movement detected. Skipping state update.")
+                time.sleep(0.5)
                 continue
-            
+            """
             # Use quaternion from sensor data instead of computing from IMU
             q_check = Quaternion(*quaternions).normalize()
             
             # Compute rotation matrix from quaternion
             C_ns = q_check.to_mat()
-          
-            # debug variable  
-            # print("p_km shape:", p_km.shape)
-            # print("v_km shape:", v_km.shape)
-            # print("C_ns shape:", C_ns.shape)
-            # print("f_km shape:", f_km.shape)
-            # print("self.g shape:", self.g.reshape(3, 1).shape)
 
             # Propagate state based on IMU data (3D position and velocity)
             p_check = p_km + delta_t * v_km + (delta_t ** 2 / 2) * (C_ns.dot(f_km) - self.g.reshape(3, 1))  # 3D position
@@ -146,14 +156,19 @@ class SLAM:
             if F.shape != (state_dim, state_dim):
                 raise ValueError(f"Shape mismatch: F should be {state_dim}x{state_dim}, but got {F.shape}")
             
-            # Propagate uncertainty (3D state)
-            p_cov_check = F.dot(p_cov_km).dot(F.T) + L.dot(self.Q_imu).dot(L.T)
+           
 
-            # LIDAR measurement update - Only x, y, z
+            # LIDAR measurement update with ICP
+            
+            self.icp_algorithm()
+            
+            """
+            
             if lidar_data is not None and len(lidar_data) > 0:
                 y_k = self.process_lidar_data(lidar_data)  # Extract position (x, y, z) from point cloud
                 #print("y_k shape after process_lidar_data:", y_k.shape)  # Powinno być (3, 1)
-                
+            """
+            if True:
                 # Measurement matrix (maps state to measurement space)
                 H = np.zeros((3, state_dim))
                 H[:3, :3] = np.eye(3)  # Only position is observed
@@ -183,14 +198,23 @@ class SLAM:
                 q_check = Quaternion(*q_check.to_numpy() + state_update[6:10].flatten()).normalize()
                 del_u_check += state_update[10:]
                 
+                 # Propagate uncertainty (3D state)
+                p_cov_check = F.dot(p_cov_km).dot(F.T) + L.dot(self.Q_imu).dot(L.T)
+                
                 # Update covariance
                 p_cov_check = (np.eye(state_dim) - K.dot(H)).dot(p_cov_check)
+                
+            
 
             # Store updated state
             p_km, v_km, q_km, del_u_km, p_cov_km = p_check, v_check, q_check, del_u_check, p_cov_check
 
             # Print real-time position (3D)
+            print(f"{imu_data}")
+            print(f"points amount {len(lidar_data)}")
             print(f"Real-time Position: x = {p_km[0, 0]:.2f}, y = {p_km[1, 0]:.2f}, z = {p_km[2, 0]:.2f}")
+            
+            time.sleep(0.5)
 
             # Termination condition (optional)
             if self.termination_condition_met():
@@ -213,6 +237,17 @@ class SLAM:
     ### Class methods ###
     #####################
 
+    def icp_algorithm(self, ref_cloud_dp):
+        
+        data_cloud = DP(DP.from_numpy(np.array(lidar_data).T))  # Bieżący odczyt
+            
+        icp = PM.ICP()
+        icp.setDefault()
+            
+        cloud_dimension = ref_cloud_dp.getEuclideanDim()
+            
+        T = icp(data_cloud, ref_cloud)
+        
 
     def measurement_update(y_k, p_check, v_check, q_check, del_u_check, p_cov_check, R_lid):
         """
