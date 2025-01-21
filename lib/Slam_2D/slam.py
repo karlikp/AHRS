@@ -55,7 +55,7 @@ class SLAM:
         DP = PM.DataPoints
         
         ref_cloud = manager_data.get_current_cloud()  # Fetch LIDAR data (point cloud with x, y, z)
-        ref_cloud_np = np.ref_cloud
+        ref_cloud_np = np.array(ref_cloud)
         
         self.ref_cloud_dp = DP(DP.from_numpy(ref_cloud_np.T))
         time.sleep(0.5)

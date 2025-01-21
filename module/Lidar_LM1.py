@@ -1,5 +1,6 @@
 import sys
 import os
+import csv
 # Adding dir 'unitree_lidar_sdk_pybind' to sys.path based on main project dir
 sys.path.append(os.path.join(os.path.dirname(__file__), 'unitree_lidar_sdk_pybind'))
 
@@ -127,6 +128,8 @@ class Lidar_LM1:
                     self.current_cloud[:] = temp_cloud # 3D 
                     self.mqtt_cloud_queue.put(packed_data)
                     
+                    print(f"Final transformation: {lidar_cloud['icp']}")
+                    
                 else:
                     print("Lack of cloud points")
 
@@ -138,6 +141,7 @@ class Lidar_LM1:
     
     def get_current_cloud(self):
         return self.current_cloud
+    
     def get_stby_quaternions(self):
         return self.stby_quaternions
     

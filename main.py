@@ -19,22 +19,25 @@ if __name__ == "__main__":
     lidar_thread = threading.Thread(target = data_manager.lidar_reading)
     lidar_thread.start()
 
-    time.sleep(5)  
-
-    SLAM_thread = threading.Thread(target = slam_process, args = (data_manager,))
+    #time.sleep(3)
+     
+    #test_libpoint = threading.Thread(target = icp_process, args = (data_manager,))
+    #test_libpoint.start()    
+    # #SLAM_thread = threading.Thread(target = slam_process, args = (data_manager,))
     
-    #AHRS_mqtt = threading.Thread(target = data_manager.send_AHRS_data)
-    #Lidar_mqtt = threading.Thread(target = data_manager.send_Lidar_data)
+    # #AHRS_mqtt = threading.Thread(target = data_manager.send_AHRS_data)
+    # #Lidar_mqtt = threading.Thread(target = data_manager.send_Lidar_data)
     
-    SLAM_thread.start()
-    #AHRS_mqtt.start()
-    #Lidar_mqtt.start()
+    # #SLAM_thread.start()
+    # #AHRS_mqtt.start()
+    # #Lidar_mqtt.start()
 
     sensor_thread.join()
     lidar_thread.join()
-    #AHRS_mqtt.join()
-    #Lidar_mqtt.join()
-    SLAM_thread.join()
+    #test_libpoint.join()
+    # #AHRS_mqtt.join()
+    # #Lidar_mqtt.join()
+    # #SLAM_thread.join()
     
    
     

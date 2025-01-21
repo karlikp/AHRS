@@ -1,26 +1,46 @@
-cmake_minimum_required(VERSION 3.22)
-project(unitree_lidar_sdk)
+cmake_minimum_required(VERSION 3.14)
+project(unitree_lidar_sdk_pybind)
 
-# Set compilation mode
-set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++14")
-set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
-set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall -DNDEBUG")
-set(CMAKE_PREFIX_PATH "/home/pbl/Desktop/SLAM/pbl_env/lib/python3.11/site-packages/pybind11/share/cmake/pybind11") 
+# Ustawienia wersji języka C++
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+# Dodanie Pybind11
 find_package(pybind11 REQUIRED)
 
-include_directories(
-    ${Python3_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/include 
+# Dodanie libpointmatcher
+find_package(libpointmatcher REQUIRED)
+
+# Ścieżka do Unitree SDK (zaktualizuj ją zgodnie z lokalizacją)
+set(UNITREE_SDK_PATH "../unitree_lidar_sdk")
+include_directories(${UNITREE_SDK_PATH}/include)
+
+# Ścieżki do libpointmatcher
+set(LIBPOINTMATCHER_STATIC_PATH "/usr/local/lib/libpointmatcher.a")
+include_directories("/usr/local/include")  # Domyślne ścieżki dla nagłówków
+
+# Ścieżka do libpointmatcher (jeśli biblioteka jest w nietypowej lokalizacji, dostosuj)
+include_directories(${LIBPOINTMATCHER_INCLUDE_DIRS})
+
+# Dodanie plików źródłowych
+set(SOURCES
+    unitree_lidar_sdk_pybind.cpp
+    function.cpp
 )
 
-# Pay attention to correct architecture
-link_directories(/home/pbl/Desktop/SLAM/unitree_lidar_sdk/lib/aarch64 
+# Tworzenie targetu biblioteki
+pybind11_add_module(unitree_lidar_sdk_pybind ${SOURCES})
+
+# Dodanie bibliotek do linkowania
+target_link_libraries(unitree_lidar_sdk_pybind
+    ${LIBPOINTMATCHER_LIBRARIES}
+    ${UNITREE_SDK_PATH}/lib/libunitree_lidar_sdk.a
 )
 
-pybind11_add_module(unitree_lidar_sdk_pybind unitree_lidar_sdk_pybind.cpp)
+# Dodanie ścieżek do zależności
+target_include_directories(unitree_lidar_sdk_pybind PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(unitree_lidar_sdk_pybind PRIVATE ${LIBPOINTMATCHER_INCLUDE_DIRS})
+target_include_directories(unitree_lidar_sdk_pybind PRIVATE ${UNITREE_SDK_PATH}/include)
 
-# Pay attention to correct architecture
-target_link_libraries(unitree_lidar_sdk_pybind PRIVATE /home/pbl/Desktop/SLAM/unitree_lidar_sdk/lib/aarch64 libunitree_lidar_sdk.a)
+# Opcjonalne: ustawienia kompilatora
+target_compile_options(unitree_lidar_sdk_pybind PRIVATE -Wall -Wextra -Wpedantic)

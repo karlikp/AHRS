@@ -67,7 +67,15 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "core": "cpp",
+        "specialfunctions": "cpp",
+        "strstream": "cpp",
+        "bitset": "cpp",
+        "slist": "cpp",
+        "fstream": "cpp",
+        "future": "cpp",
+        "cfenv": "cpp"
     },
 
        "python.analysis.extraPaths": [

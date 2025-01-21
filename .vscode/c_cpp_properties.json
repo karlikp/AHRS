@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/pbl/Desktop/SLAM/pbl_env/lib/python3.11/site-packages/pybind11/include/pybind11/",
+                "/home/pbl/Desktop/SLAM/unitree_lidar_sdk_pybind/",
+                "/usr/include/eigen3/"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-arm64"
+        }
+    ],
+    "version": 4
+}

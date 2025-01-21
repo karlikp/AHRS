@@ -1,10 +1,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include "./../unitree_lidar_sdk/include/unitree_lidar_sdk.h"
-#include <string>
-#include <vector>
-#include <iostream>
 #include <csignal>
+
+#include "function.h"
 
 namespace py = pybind11;
 using namespace unitree_lidar_sdk;
@@ -15,7 +14,9 @@ public:
     UnitreeLidarReader* lreader;
     int cloud_scan_num;
     std::string port_name;
-
+    bool init_ref = false;
+    typename PointMatcher<float>::DataPoints ref;
+    
     UnitreeLidarWrapper() {
         lreader = createUnitreeLidarReader();
         cloud_scan_num = 18;
@@ -87,11 +88,43 @@ public:
 
         
         py::list points_list;
+        Point3D temp_point;
+        std::vector<Point3D> raw_cloud_xyz;
+
         for (const auto& point : lreader->getCloud().points) {
             points_list.append(py::make_tuple(point.x, point.y, point.z, point.intensity, point.time, point.ring));
+            
+            temp_point.x = point.x;
+            temp_point.y = point.y;
+            temp_point.z = point.z;
+            raw_cloud_xyz.push_back(temp_point);
         }
+
+
         cloud_data["points"] = points_list;  // Assigning the list to the dict
-    
+
+        if(init_ref == false) {
+            ref = convertToDataPoints(raw_cloud_xyz);
+            std::cout << "init ref";
+            init_ref = true;
+            }
+        else {
+        auto complet_cloud = calculateNormalsSet(raw_cloud_xyz);
+
+        auto data = convertToDataPoints<float>(complet_cloud);
+
+
+        auto icp_result = icp_simple(data, ref);
+
+        std::cout << "Raw cloud size: " << raw_cloud_xyz.size() << std::endl;
+
+        std::cout << "Data size: " << data.features.cols() << ", Ref size: " << ref.features.cols() << std::endl;
+
+        cloud_data["icp"] = icp_result.first;
+        
+        ref = icp_result.second;
+        }
+
         return cloud_data;
     }
 

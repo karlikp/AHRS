@@ -14,6 +14,19 @@
                 "PYTHONPATH": "${workspaceFolder}/unitree_lidar_sdk_pybind:${workspaceFolder}/lib:${workspaceFolder}/${workspaceFolder}/*"
             
             }
+        },
+        {
+            "name": "Python: Debug icp_simple.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/lib/libpointmatcher_original/example/python/icp_simple.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/unitree_lidar_sdk_pybind:${workspaceFolder}/lib:${workspaceFolder}/${workspaceFolder}/*"
+            
+            }
         }
     ]
 }
