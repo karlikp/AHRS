@@ -1,0 +1,1 @@
+/usr/bin/c++ -std=c++14  -O3 -Wall -DNDEBUG -rdynamic CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o -o /home/pbl/Desktop/SLAM/unitree_lidar_sdk/bin/example_lidar   -L/home/pbl/Desktop/SLAM/unitree_lidar_sdk/lib/aarch64  -Wl,-rpath,/home/pbl/Desktop/SLAM/unitree_lidar_sdk/lib/aarch64 -lunitree_lidar_sdk 
