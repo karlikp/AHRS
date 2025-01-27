@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = -Dunitree_lidar_sdk_pybind_EXPORTS
 
-CXX_INCLUDES = -I/usr/include/eigen3 -I/home/pbl/Desktop/SLAM/unitree_lidar_sdk_pybind -I/home/pbl/Desktop/SLAM/unitree_lidar_sdk_pybind/../unitree_lidar_sdk/include -isystem /usr/include/python3.11
+CXX_INCLUDES = -I/usr/include/eigen3 -I/usr/local/include/pointmatcher -I/home/pbl/Desktop/SLAM/unitree_lidar_sdk_pybind -I/home/pbl/Desktop/SLAM/unitree_lidar_sdk_pybind/../unitree_lidar_sdk/include -isystem /usr/include/python3.11
 
-CXX_FLAGS = -fPIC -fvisibility=hidden -Wall -Wextra -Wpedantic -flto -fno-fat-lto-objects -std=gnu++17
+CXX_FLAGS = -fPIC -fvisibility=hidden -fopenmp -Wall -Wextra -Wpedantic -flto -fno-fat-lto-objects -std=gnu++17
 

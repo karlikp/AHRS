@@ -1,6 +1,8 @@
 #include <cassert>
 #include <Eigen/Dense>
 #include <flann/flann.hpp>
+#include <fstream>
+
 #include "function.h"
 
 
@@ -30,19 +32,22 @@ std::pair< PointMatcher<float>::TransformationParameters, PointMatcher<float>::D
 	// ref.save("test_ref.vtk");
 	// data.save("test_data_in.vtk");
 	// data_out.save("test_data_out.vtk");
-	std::cout << "Final transformation:" << std::endl << T << std::endl;
+	//std::cout << "Final transformation:" << std::endl << T << std::endl;
 
 	return std::make_pair(T, data_out);
 }
 
 // Funkcja do obliczania normalnych dla chmury punktów i zwracania połączonych wyników
 std::vector<std::array<float, 6>> calculateNormalsSet(const std::vector<Point3D>& points, int k) {
-
     std::vector<std::array<float, 6>> combinedResults;
 
-    // Tworzenie macierzy dla punktów
+    if (points.empty()) {
+        return combinedResults; // Zwróć pusty wynik, jeśli brak punktów
+    }
+
     size_t numPoints = points.size();
-    flann::Matrix<float> dataset(new float[numPoints * 3], numPoints, 3);
+    std::vector<float> datasetVec(numPoints * 3);
+    flann::Matrix<float> dataset(datasetVec.data(), numPoints, 3);
 
     for (size_t i = 0; i < numPoints; ++i) {
         dataset[i][0] = points[i].x;
@@ -50,103 +55,68 @@ std::vector<std::array<float, 6>> calculateNormalsSet(const std::vector<Point3D>
         dataset[i][2] = points[i].z;
     }
 
-    // Tworzenie KD-Tree
     flann::Index<flann::L2<float>> index(dataset, flann::KDTreeIndexParams(1));
     index.buildIndex();
 
-    // Bufory do przechowywania wyników zapytań
-    std::vector<std::vector<int>> indices;
-    std::vector<std::vector<float>> dists;
+    std::vector<std::vector<int>> indices(1);
+    std::vector<std::vector<float>> dists(1);
 
     for (size_t i = 0; i < numPoints; ++i) {
-        // Wyszukiwanie k najbliższych sąsiadów
-        flann::Matrix<float> query(new float[3]{points[i].x, points[i].y, points[i].z}, 1, 3);
-        index.knnSearch(query, indices, dists, k, flann::SearchParams(128));
-        delete[] query.ptr();
+        std::array<float, 3> queryArr = {points[i].x, points[i].y, points[i].z};
+        flann::Matrix<float> query(queryArr.data(), 1, 3);
 
-        // Pobranie sąsiadów
-        std::vector<Eigen::Vector3f> neighbors;
-        for (size_t j = 0; j < indices[i].size(); ++j) {
-            int neighborIdx = indices[i][j];
-         neighbors.emplace_back(points[neighborIdx].x, points[neighborIdx].y, points[neighborIdx].z);
+        indices[0].resize(k);
+        dists[0].resize(k);
+        index.knnSearch(query, indices, dists, k, flann::SearchParams(128));
+
+        if (indices[0].empty()) {
+            continue; // Brak sąsiadów
         }
 
-        // Oblicz centroid
+        std::vector<Eigen::Vector3f> neighbors;
+        for (size_t j = 0; j < indices[0].size(); ++j) {
+            int neighborIdx = indices[0][j];
+            if (neighborIdx >= 0 && neighborIdx < static_cast<int>(numPoints)) {
+                neighbors.emplace_back(points[neighborIdx].x, points[neighborIdx].y, points[neighborIdx].z);
+            }
+        }
+
         Eigen::Vector3f centroid = Eigen::Vector3f::Zero();
         for (const auto& neighbor : neighbors) {
             centroid += neighbor;
         }
         centroid /= static_cast<float>(neighbors.size());
 
-        // Oblicz macierz kowariancji
         Eigen::Matrix3f covariance = Eigen::Matrix3f::Zero();
         for (const auto& neighbor : neighbors) {
             Eigen::Vector3f centered = neighbor - centroid;
             covariance += centered * centered.transpose();
         }
 
-        // Rozkład SVD
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> solver(covariance);
-        Eigen::Vector3f normal = solver.eigenvectors().col(0); // Najmniejsza wartość własna
+        if (covariance.isZero(1e-6)) {
+            continue; // Pomijaj degenerate cases
+        }
 
-        // Orientacja normalnej w stronę sensora
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> solver(covariance);
+        Eigen::Vector3f normal = solver.eigenvectors().col(0);
+
         Eigen::Vector3f sensorDirection = Eigen::Vector3f(points[i].x, points[i].y, points[i].z) - centroid;
         if (normal.dot(sensorDirection) < 0) {
             normal = -normal;
         }
 
-        // Połącz punkt z odpowiadającą mu normalną
         combinedResults.push_back({points[i].x, points[i].y, points[i].z, normal[0], normal[1], normal[2]});
     }
 
-    delete[] dataset.ptr();
     return combinedResults;
 }
 
-template <typename T>
-typename PointMatcher<T>::DataPoints convertToDataPoints(const std::vector<std::array<float, 6>>& pointsWithNormals) {
-    using PM = PointMatcher<T>;
+// template <typename T>
+// typename PointMatcher<T>::DataPoints convertToDataPoints(const std::vector<std::array<float, 6>>& pointsWithNormals) {
+//    
 
-    // Liczba punktów
-    const size_t pointCount = pointsWithNormals.size();
 
-    // Tworzenie macierzy cech (features) i deskryptorów (descriptors)
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> features(4, pointCount); // x, y, z, pad
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> descriptors(3, pointCount); // nx, ny, nz
-
-    // Wypełnianie macierzy cech i deskryptorów
-    for (size_t i = 0; i < pointCount; ++i) {
-        const auto& p = pointsWithNormals[i];
-
-        // Cecha: x, y, z, 1 (dla współrzędnych homogenicznych)
-        features(0, i) = p[0]; // x
-        features(1, i) = p[1]; // y
-        features(2, i) = p[2]; // z
-        features(3, i) = 1.0;  // pad
-
-        // Deskryptor: nx, ny, nz
-        descriptors(0, i) = p[3]; // nx
-        descriptors(1, i) = p[4]; // ny
-        descriptors(2, i) = p[5]; // nz
-    }
-
-    // Etykiety dla cech i deskryptorów
-    typename PM::DataPoints::Labels featureLabels = {
-        PM::DataPoints::Label("x", 1),
-        PM::DataPoints::Label("y", 1),
-        PM::DataPoints::Label("z", 1),
-        PM::DataPoints::Label("pad", 1)
-    };
-
-    typename PM::DataPoints::Labels descriptorLabels{
-        PM::DataPoints::Label("normals", 3) // nx, ny, nz
-    };
-
-    // Tworzenie obiektu DataPoints
-    typename PM::DataPoints dataPoints(features, featureLabels, descriptors, descriptorLabels);
-
-    return dataPoints;
-}
+// }
 
 // Funkcja konwertująca std::vector<Point3D> na PointMatcher<float>::DataPoints
 typename PointMatcher<float>::DataPoints convertToDataPoints(const std::vector<Point3D>& points) {
@@ -180,4 +150,33 @@ descriptorLabels.push_back(PointMatcher<float>::DataPoints::Label("normals", 3))
     DataPoints dataPoints(features, featureLabels);
 
     return dataPoints;
+}
+
+void printDataPoints(const DP& dataPoints, const std::string& name) {
+    // Generowanie nazwy pliku na podstawie nazwy tablicy
+    std::string filename = name + ".txt";
+
+    std::ofstream outFile(filename, std::ios::app); // Otwórz plik w trybie dopisywania
+    if (!outFile.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << " for writing." << std::endl;
+        return;
+    }
+
+    outFile << "DataPoints: " << name << std::endl;
+
+    // Wypisanie cech (features)
+    outFile << "Features (rows: " << dataPoints.features.rows()
+            << ", cols: " << dataPoints.features.cols() << "):" << std::endl;
+    outFile << dataPoints.features << std::endl;
+
+    // Wypisanie deskryptorów (descriptors), jeśli istnieją
+    if (dataPoints.descriptors.rows() > 0) {
+        outFile << "Descriptors (rows: " << dataPoints.descriptors.rows()
+                << ", cols: " << dataPoints.descriptors.cols() << "):" << std::endl;
+        outFile << dataPoints.descriptors << std::endl;
+    } else {
+        outFile << "No descriptors available." << std::endl;
+    }
+
+    outFile.close(); // Zamknij plik
 }

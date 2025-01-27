@@ -108,6 +108,10 @@ unitree_lidar_sdk_pybind_EXTERNAL_OBJECTS =
 unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: CMakeFiles/unitree_lidar_sdk_pybind.dir/unitree_lidar_sdk_pybind.cpp.o
 unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: CMakeFiles/unitree_lidar_sdk_pybind.dir/function.cpp.o
 unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: CMakeFiles/unitree_lidar_sdk_pybind.dir/build.make
+unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: /usr/local/lib/libpointmatcher.a
+unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: /usr/local/lib/libnabo.a
+unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: /usr/lib/aarch64-linux-gnu/libyaml-cpp.so.0.7.0
+unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: /usr/lib/gcc/aarch64-linux-gnu/12/libgomp.so
 unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so: CMakeFiles/unitree_lidar_sdk_pybind.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/pbl/Desktop/SLAM/unitree_lidar_sdk_pybind/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX shared module unitree_lidar_sdk_pybind.cpython-311-aarch64-linux-gnu.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/unitree_lidar_sdk_pybind.dir/link.txt --verbose=$(VERBOSE)
