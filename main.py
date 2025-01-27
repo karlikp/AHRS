@@ -18,12 +18,14 @@ if __name__ == "__main__":
     
     data_manager.bmx160.calibre_ready_event.wait() # Waiting for IMU data to calibration
     
-    lidar_thread = threading.Thread(target = data_manager.lidar_reading)
+    semaphore = threading.Semaphore(0) # Blocking EKF to wait for transformation matrix
+    
+    lidar_thread = threading.Thread(target=data_manager.lidar_reading, args=(semaphore,))
     lidar_thread.start()
 
     time.sleep(0.5)
       
-    SLAM_thread = threading.Thread(target = slam_process, args = (data_manager,))
+    SLAM_thread = threading.Thread(target = slam_process, args = (data_manager, semaphore))
     SLAM_thread.start()
     
     # #AHRS_mqtt = threading.Thread(target = data_manager.send_AHRS_data)
@@ -35,9 +37,10 @@ if __name__ == "__main__":
 
     sensor_thread.join()
     lidar_thread.join()
+    SLAM_thread.join()
     #AHRS_mqtt.join()
     #Lidar_mqtt.join()
-    #LAM_thread.join()
+   
     
    
     

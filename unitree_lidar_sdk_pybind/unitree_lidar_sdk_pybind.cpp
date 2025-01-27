@@ -80,7 +80,6 @@ public:
                                                 lreader->getIMU().quaternion[1],
                                                 lreader->getIMU().quaternion[2],
                                                 lreader->getIMU().quaternion[3]);
-        //imu_data["time_delay"] = lreader->getTimeDelay();
         return imu_data;
     }
 
@@ -103,9 +102,7 @@ public:
         }
 
 
-        cloud_data["points"] = points_list;  // Assigning the list to the dict
-
-        std::cout << "Debug-1\n";  
+        cloud_data["points"] = points_list;  // Assigning the list to the dict 
 
         if(init_ref == false) {
             ref = convertToDataPoints(raw_cloud_xyz);
@@ -113,28 +110,18 @@ public:
             init_ref = true;
             }
         else {
-        std::cout << "Debug-2\n";    
+            
         auto complet_cloud = calculateNormalsSet(raw_cloud_xyz);
 
-        std::cout << "Debug-3\n";
         auto data = convertToDataPoints<float>(complet_cloud);
-        std::cout << "Debug-4\n";
-       
-         
-        // printDataPoints(data, "data");
-        // printDataPoints(ref, "ref");
-
+        
         auto icp_result = icp_simple(data, ref);
 
-        std::cout << "Raw cloud size: " << raw_cloud_xyz.size() << std::endl;
-
-        std::cout << "Data size: " << data.features.cols() << ", Ref size: " << ref.features.cols() << std::endl;
+        // std::cout << "Raw cloud size: " << raw_cloud_xyz.size() << std::endl;
+        // std::cout << "Data size: " << data.features.cols() << ", Ref size: " << ref.features.cols() << std::endl;
 
         py::array icp_matrix = py::cast(icp_result.first);
         cloud_data["icp"] = icp_matrix;
-
-        std::cout << "Debug-5\n";
-
         
         ref = icp_result.second;
         }

@@ -1,6 +1,7 @@
 import sys
 import os
 import csv
+import numpy as np
 # Adding dir 'unitree_lidar_sdk_pybind' to sys.path based on main project dir
 sys.path.append(os.path.join(os.path.dirname(__file__), 'unitree_lidar_sdk_pybind'))
 
@@ -23,6 +24,8 @@ class Lidar_LM1:
         self.is_dirty = False
         self.lidar = unitree_lidar_sdk_pybind.UnitreeLidarWrapper()
         self.lidar.set_working_mode(1)  # NORMAL
+        
+        self.transformation_matrix = None
         time.sleep(1)
 
     def check_init(self):
@@ -59,7 +62,7 @@ class Lidar_LM1:
             packed_data = bytearray(struct.pack('f', value))
             self.mqtt_dirty_queue.put(packed_data)
 
-    def parsing_data(self):
+    def parsing_data(self, semaphore):
         print("\nParsing data (PointCloud and IMU)...")
 
         while True:
@@ -76,25 +79,8 @@ class Lidar_LM1:
                         )
                     self.mqtt_imu_queue.put(packed_data) 
                     
-                    # Dodawanie tylko quaternionów do listy standby, dopóki nie osiągnie 700
-                    if len(self.stby_quaternions) < 700:
-                        
-                        try:
-                            data = {
-                                "timestamp": lidar_imu['timestamp'],
-                                "q_w": lidar_imu['quaternion'][0],
-                                "q_x": lidar_imu['quaternion'][1],
-                                "q_y": lidar_imu['quaternion'][2],
-                                "q_z": lidar_imu['quaternion'][3],
-                            }
-    
-                            self.stby_quaternions.append(data)
-                        except Exception as e:
-                            print(f"Added data: {data}")
-                    else:
-                        self.current_quaternions[:] = [*lidar_imu['quaternion']]
-                      
-                         
+                    self.current_quaternions[:] = [*lidar_imu['quaternion']]
+                               
                 else:
                     print("No IMU data received.")
 
@@ -102,14 +88,12 @@ class Lidar_LM1:
                 lidar_cloud = self.lidar.get_cloud_data()
 
                 if lidar_cloud:
-                    # Output data: 1)Timestamp: Float, 2)Cloud size (amount points): Int,
-                    # 3)Points {x, y, z, intensity, time}: Float, ring: Uint32_t - 4 bytes
                     
                     points = lidar_cloud['points']
                     timestamp = lidar_cloud['timestamp']
                     
                     packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
-                    #print(f"Amount points: {len(points)}")
+                    
                     
                     temp_cloud = []
 
@@ -118,14 +102,17 @@ class Lidar_LM1:
                         point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
                         packed_data.extend(point_data) 
                         temp_cloud.append((x,y,z))
-                        
-                    #print(f"{x},{y},{z},{intensity}, {time}, {ring}")
+                    
                         
                     self.current_cloud[:] = temp_cloud # 3D 
                     self.mqtt_cloud_queue.put(packed_data)
                     
-                    if 'icp' in lidar_cloud:
-                        print(f"Final transformation: {lidar_cloud['icp']}")
+                    if ('icp' in lidar_cloud): #and 
+                        if np.any(self.transformation_matrix != lidar_cloud['icp']):
+                            self.transformation_matrix = lidar_cloud['icp']
+                            semaphore.release()
+                            
+                            print(f"Matrix T: {self.transformation_matrix}")
                     else:
                         print("Key 'icp' does not exist in lidar_cloud!")
                     
@@ -141,6 +128,6 @@ class Lidar_LM1:
     def get_current_cloud(self):
         return self.current_cloud
     
-    def get_stby_quaternions(self):
-        return self.stby_quaternions
+    def get_transformation_matrix(self):
+        return self.transformation_matrix
     

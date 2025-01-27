@@ -151,32 +151,3 @@ descriptorLabels.push_back(PointMatcher<float>::DataPoints::Label("normals", 3))
 
     return dataPoints;
 }
-
-void printDataPoints(const DP& dataPoints, const std::string& name) {
-    // Generowanie nazwy pliku na podstawie nazwy tablicy
-    std::string filename = name + ".txt";
-
-    std::ofstream outFile(filename, std::ios::app); // Otwórz plik w trybie dopisywania
-    if (!outFile.is_open()) {
-        std::cerr << "Error: Could not open file " << filename << " for writing." << std::endl;
-        return;
-    }
-
-    outFile << "DataPoints: " << name << std::endl;
-
-    // Wypisanie cech (features)
-    outFile << "Features (rows: " << dataPoints.features.rows()
-            << ", cols: " << dataPoints.features.cols() << "):" << std::endl;
-    outFile << dataPoints.features << std::endl;
-
-    // Wypisanie deskryptorów (descriptors), jeśli istnieją
-    if (dataPoints.descriptors.rows() > 0) {
-        outFile << "Descriptors (rows: " << dataPoints.descriptors.rows()
-                << ", cols: " << dataPoints.descriptors.cols() << "):" << std::endl;
-        outFile << dataPoints.descriptors << std::endl;
-    } else {
-        outFile << "No descriptors available." << std::endl;
-    }
-
-    outFile.close(); // Zamknij plik
-}

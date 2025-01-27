@@ -55,11 +55,11 @@ class Data_manager:
 
 
 
-    def lidar_reading(self):   
+    def lidar_reading(self, semaphore):   
         try:
             self.lidar.check_init()
             self.lidar.check_dirty()
-            self.lidar.parsing_data()
+            self.lidar.parsing_data(semaphore)
         except Exception as e:
             print(f"Error in lidar_reading: {e}") 
         
@@ -148,13 +148,13 @@ class Data_manager:
     def get_current_cloud(self):
         return self.lidar.get_current_cloud()
     
-    # def get_stby_quaternions(self):
-    #     return self.lidar.get_stby_quaternions()
-    
     def get_calibre_imu(self):
         return self.bmx160.get_calibre_data()
     
     def get_calibre_imu_status(self):
         return self.bmx160.get_calibre_status()
+    
+    def get_transformation_matrix(self):
+        return self.lidar.get_transformation_matrix()
     
             

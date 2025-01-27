@@ -62,5 +62,3 @@ typename PointMatcher<float>::DataPoints convertToDataPoints(const std::vector<P
 
 std::pair< PointMatcher<float>::TransformationParameters, PointMatcher<float>::DataPoints> 
                         icp_simple(PointMatcher<float>::DataPoints data, PointMatcher<float>::DataPoints ref);
-
-void printDataPoints(const DP& dataPoints, const std::string& name);
