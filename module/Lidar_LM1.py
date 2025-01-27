@@ -11,10 +11,6 @@ import struct
 
 class Lidar_LM1:
 
-   
-    
-    
-
     def __init__(self):
         self.mqtt_imu_queue = queue.Queue()
         self.mqtt_cloud_queue = queue.Queue()
@@ -128,7 +124,10 @@ class Lidar_LM1:
                     self.current_cloud[:] = temp_cloud # 3D 
                     self.mqtt_cloud_queue.put(packed_data)
                     
-                    print(f"Final transformation: {lidar_cloud['icp']}")
+                    if 'icp' in lidar_cloud:
+                        print(f"Final transformation: {lidar_cloud['icp']}")
+                    else:
+                        print("Key 'icp' does not exist in lidar_cloud!")
                     
                 else:
                     print("Lack of cloud points")

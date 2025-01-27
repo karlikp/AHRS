@@ -83,5 +83,6 @@
         "${workspaceFolder}/unitree_lidar_sdk_pybind",
         "./module",
         "./module"
-    ]
+    ],
+    "C_Cpp.errorSquiggles": "disabled"
 }
