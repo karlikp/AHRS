@@ -1,6 +1,6 @@
 import sys
 import os
-import csv
+import threading
 import numpy as np
 # Adding dir 'unitree_lidar_sdk_pybind' to sys.path based on main project dir
 sys.path.append(os.path.join(os.path.dirname(__file__), 'unitree_lidar_sdk_pybind'))
@@ -25,7 +25,9 @@ class Lidar_LM1:
         self.lidar = unitree_lidar_sdk_pybind.UnitreeLidarWrapper()
         self.lidar.set_working_mode(1)  # NORMAL
         
+        self.collected_matrices = []
         self.transformation_matrix = None
+        self.calibre_ready_event = threading.Event()
         time.sleep(1)
 
     def check_init(self):
@@ -107,18 +109,48 @@ class Lidar_LM1:
                     self.current_cloud[:] = temp_cloud # 3D 
                     self.mqtt_cloud_queue.put(packed_data)
                     
-                    if ('icp' in lidar_cloud): #and 
-                        if np.any(self.transformation_matrix != lidar_cloud['icp']):
+                    if 'icp' in lidar_cloud and np.any(self.transformation_matrix != lidar_cloud['icp']):
+                        # Store the first 50 transformation matrices
+                        if len(self.collected_matrices) < 20:
+                            self.collected_matrices.append(lidar_cloud['icp'])
+                        
+                        else:
+                            self.calibre_ready_event.set()
                             self.transformation_matrix = lidar_cloud['icp']
                             semaphore.release()
-                            
-                            print(f"Matrix T: {self.transformation_matrix}")
+
+                        # print(f"Matrix T: {self.transformation_matrix}")
                     else:
                         print("Key 'icp' does not exist in lidar_cloud!")
                     
                 else:
                     print("Lack of cloud points")
+                    
+    def lidar_calibrate(self):
+        if not self.collected_matrices:
+            raise ValueError("Brak zebranych macierzy do kalibracji.")
 
+       
+        if not all(isinstance(mat, np.ndarray) and mat.shape == (4, 4) for mat in self.collected_matrices):
+            raise ValueError("Niepoprawny format macierzy w collected_matrices. Oczekiwano listy macierzy 4x4.")
+
+        collected_matrices_np = np.array(self.collected_matrices)
+
+        avg_rotation = np.mean(collected_matrices_np[:, :3, :3], axis=0)
+        avg_translation = np.mean(collected_matrices_np[:, :3, 3], axis=0)
+
+        U, _, Vt = np.linalg.svd(avg_rotation)
+        corrected_rotation = U @ Vt
+
+        calibrated_matrix = np.eye(4)
+        calibrated_matrix[:3, :3] = corrected_rotation
+        calibrated_matrix[:3, 3] = avg_translation
+
+        print(f"Received calibrated_matrix: {calibrated_matrix}")
+        print(f"Shape of calibrated_matrix: {calibrated_matrix.shape}")
+
+        return calibrated_matrix
+    
     def get_dirty(self):
         return self.is_dirty
     

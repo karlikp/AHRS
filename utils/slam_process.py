@@ -14,5 +14,7 @@ def slam_process(data_manager, semaphore):
     imu_calibrator = IMU_calibrator()
     imu_calibrator.calibrate_imu_once(data_manager)
     
-    ekf_real_time(data_manager, imu_calibrator, semaphore)
+    calibrated_matrix = data_manager.get_lidar_calibrate()
+    
+    ekf_real_time(data_manager, imu_calibrator, semaphore, calibrated_matrix)
     

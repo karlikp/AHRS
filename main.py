@@ -16,14 +16,13 @@ if __name__ == "__main__":
     sensor_thread = threading.Thread(target = data_manager.sensor_reading)
     sensor_thread.start()
     
-    data_manager.bmx160.calibre_ready_event.wait() # Waiting for IMU data to calibration
-    
     semaphore = threading.Semaphore(0) # Blocking EKF to wait for transformation matrix
     
     lidar_thread = threading.Thread(target=data_manager.lidar_reading, args=(semaphore,))
     lidar_thread.start()
 
-    time.sleep(0.5)
+    data_manager.bmx160.calibre_ready_event.wait() # Waiting for IMU calibration
+    data_manager.lidar.calibre_ready_event.wait() # Waiting for Lidar calibration
       
     SLAM_thread = threading.Thread(target = slam_process, args = (data_manager, semaphore))
     SLAM_thread.start()

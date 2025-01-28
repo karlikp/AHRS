@@ -157,4 +157,7 @@ class Data_manager:
     def get_transformation_matrix(self):
         return self.lidar.get_transformation_matrix()
     
+    def get_lidar_calibrate(self):
+        return self.lidar.lidar_calibrate()
+    
             
