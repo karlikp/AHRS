@@ -25,7 +25,7 @@ class Data_manager:
 
         self.mqtt_client = Mqtt("test.mosquitto.org")
 
-        self.AHRS_list = [self.bmp388, self.bmx160, self.vl6180x, self.vl53l1x]
+        self.AHRS_list = [self.bmp388, self.bmx160, self.vl6180x, self.vl53l1x] 
         self.lidar = Lidar_LM1()
 
         self.last_mean_calculation_time = time.time()
@@ -55,11 +55,11 @@ class Data_manager:
 
 
 
-    def lidar_reading(self, semaphore):   
+    def lidar_reading(self):   
         try:
             self.lidar.check_init()
             self.lidar.check_dirty()
-            self.lidar.parsing_data(semaphore)
+            self.lidar.parsing_data()
         except Exception as e:
             print(f"Error in lidar_reading: {e}") 
         
@@ -68,27 +68,9 @@ class Data_manager:
     
         print(f"Sending AHRS")
         
-        def send_data(sensor, topic):
-            while True:
-                try:
-                    data = sensor.get_data_from_queue()
-                    
-                    # check emptines
-                    if data:
-                        self.mqtt_client.client.publish(topic, data)
-                        print(f"Sent data: {data}")
-                    # else:
-                    #     print("No data to send. Skipping this cycle.")
-
-                except Exception as e:
-                    print(f"Error occurred: {e}")
-
-                time.sleep(0.1)  
-
-        # Create thread for current sensor
         threads = []
         for sensor in self.AHRS_list:
-            t = threading.Thread(target=send_data, args=(sensor, sensor.get_topic()), daemon=True)
+            t = threading.Thread(target= self.AHRS_deamon, args=(sensor, sensor.get_topic()), daemon=True)
             threads.append(t)
             t.start()
 
@@ -101,29 +83,17 @@ class Data_manager:
 
     def send_Lidar_data(self):
         print(f"Sending Lidar")
-
-        def send_data(queue, topic):
         
-            while True:
-                try:
-                    data = queue.get_nowait()  # Load data without block
-                    self.mqtt_client.client.publish(topic, data)
-                    #print(f"Sent data to topic {topic}: {data}")
-
-                except Exception as e:
-                    print(f"send lidar data exception: {e}")
-                    return
-                time.sleep(0.5) 
-
         queue_topic_mapping = {
             self.lidar.mqtt_imu_queue: "Lidar/imu",
             self.lidar.mqtt_cloud_queue: "Lidar/cloud",
             self.lidar.mqtt_dirty_queue: "Lidar/dirty",
+            self.lidar.mqtt_azimuth_queue: "Lidar/azimuth"
         }
 
         threads = []
         for queue, topic in queue_topic_mapping.items():
-            t = threading.Thread(target=send_data, args=(queue, topic), daemon=True)
+            t = threading.Thread(target=self.Lidar_deamon, args=(queue, topic), daemon=True)
             threads.append(t)
             t.start()
 
@@ -132,6 +102,37 @@ class Data_manager:
                 time.sleep(1)
         except KeyboardInterrupt:
             print("Stopping data transmission...")
+            
+    def AHRS_deamon(self, sensor, topic):
+        
+            while True:
+                try:
+                    data = sensor.get_data_from_queue()
+                    
+                    # check emptines
+                    if data:
+                        self.mqtt_client.client.publish(topic, data)
+               
+                except Exception as e:
+                    print(f"Error occurred: {e}")
+
+                time.sleep(0.1)  
+                
+    def Lidar_deamon(self, queue, topic):
+        
+            while True:
+                try:
+                    while queue.empty():
+                        #print(f"Kolejka dla {topic} jest pusta, czekam na dane...")
+                        time.sleep(0.5)
+                    
+                    data = queue.get_nowait()  # Load data without block
+                    self.mqtt_client.client.publish(topic, data)
+
+                except Exception as e:
+                    print(f"send lidar data exception: {e}")
+                    return
+                time.sleep(0.5) 
         
     def mqtt_connect(self):
             self.mqtt_client.client.connect("test.mosquitto.org", 1883, 60)
@@ -139,20 +140,14 @@ class Data_manager:
     def lidar_is_dirty(self):
         return self.lidar.get_dirty()
     
-    def get_current_imu(self):
-        return self.bmx160.get_current_imu()
-        
     def get_current_quaternions(self):
         return self.lidar.get_current_quaternions()
         
     def get_current_cloud(self):
         return self.lidar.get_current_cloud()
     
-    def get_calibre_imu(self):
-        return self.bmx160.get_calibre_data()
-    
     def get_calibre_imu_status(self):
-        return self.bmx160.get_calibre_status()
+        return self.bmx160.get_calibre_imu_status()
     
     def get_transformation_matrix(self):
         return self.lidar.get_transformation_matrix()

@@ -8,7 +8,7 @@ class IMU_calibrator:
         self.mag_bias = None
         self.g = -9.81  # Gravitational acceleration [m/s^2]
 
-    def calibrate_imu(self, imu_data_samples):
+    def calc_biases(self, imu_data_samples):
         """
         Calibrates the IMU based on a series of stationary measurements.
 

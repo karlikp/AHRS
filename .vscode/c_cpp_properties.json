@@ -4,8 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/lib/**",
                 "/home/pbl/Desktop/SLAM/pbl_env/lib/python3.11/site-packages/pybind11/include/pybind11/",
-                "/home/pbl/Desktop/SLAM/unitree_lidar_sdk_pybind/",
+                "/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk_pybind/",
                 "/usr/include/eigen3/"
             ],
             "defines": [],

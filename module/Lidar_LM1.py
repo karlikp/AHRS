@@ -3,12 +3,15 @@ import os
 import threading
 import numpy as np
 # Adding dir 'unitree_lidar_sdk_pybind' to sys.path based on main project dir
-sys.path.append(os.path.join(os.path.dirname(__file__), 'unitree_lidar_sdk_pybind'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'lib','unitree_lidar_sdk_pybind'))
 
 import unitree_lidar_sdk_pybind
 import time
 import queue
 import struct
+
+from .Compass import Compass
+from scipy.spatial.transform import Rotation as R
 
 class Lidar_LM1:
 
@@ -16,10 +19,15 @@ class Lidar_LM1:
         self.mqtt_imu_queue = queue.Queue()
         self.mqtt_cloud_queue = queue.Queue()
         self.mqtt_dirty_queue = queue.Queue()
+        self.mqtt_azimuth_queue = queue.Queue()    #TO DO
+        self.mqtt_trans_matrix_queue = queue.Queue()  #TO DO
         
+        self.compass_is_calibrated = False
+        self.compass = Compass()
         self.current_quaternions = []
         self.current_cloud = []
         self.stby_quaternions = []
+        self.azimuth = None
         
         self.is_dirty = False
         self.lidar = unitree_lidar_sdk_pybind.UnitreeLidarWrapper()
@@ -28,6 +36,7 @@ class Lidar_LM1:
         self.collected_matrices = []
         self.transformation_matrix = None
         self.calibre_ready_event = threading.Event()
+        
         time.sleep(1)
 
     def check_init(self):
@@ -64,13 +73,16 @@ class Lidar_LM1:
             packed_data = bytearray(struct.pack('f', value))
             self.mqtt_dirty_queue.put(packed_data)
 
-    def parsing_data(self, semaphore):
-        print("\nParsing data (PointCloud and IMU)...")
+    def parsing_data(self):
+        print(f"Parsing data (PointCloud and IMU)...")
+        print(f"Waiting for sensors calibration...")
+        
 
         while True:
             result = self.lidar.check_message()
 
             if result == "IMU":
+                
                 lidar_imu = self.lidar.get_imu_data()
 
                 if lidar_imu:
@@ -79,14 +91,24 @@ class Lidar_LM1:
                     packed_data = bytearray(
                             struct.pack('d4f', lidar_imu['timestamp'], *lidar_imu['quaternion'])
                         )
+                    
                     self.mqtt_imu_queue.put(packed_data) 
                     
-                    self.current_quaternions[:] = [*lidar_imu['quaternion']]
+                    if not self.compass_is_calibrated:
+                        self.compass.calibrate(lidar_imu['quaternion'])
+                        self.compass_is_calibrated = True
+                    
+                    
+                    self.azimuth = self.compass.get_corrected_azimuth(lidar_imu['quaternion'])
+                    
+                    self.mqtt_azimuth_queue.put(packed_data) 
+                    #time.sleep(0.05)
                                
                 else:
                     print("No IMU data received.")
 
             elif result == "POINTCLOUD":
+                
                 lidar_cloud = self.lidar.get_cloud_data()
 
                 if lidar_cloud:
@@ -95,40 +117,36 @@ class Lidar_LM1:
                     timestamp = lidar_cloud['timestamp']
                     
                     packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
-                    
-                    
+                                    
                     temp_cloud = []
 
                     for point in points:
-                        x, y, z, intensity, time, ring = point
-                        point_data = struct.pack('fffffI', x, y, z, intensity, time, ring)
+                        x, y, z, intensity, point_time, ring = point
+                        point_data = struct.pack('fffffI', x, y, z, intensity, point_time, ring)
                         packed_data.extend(point_data) 
                         temp_cloud.append((x,y,z))
                     
-                        
-                    self.current_cloud[:] = temp_cloud # 3D 
                     self.mqtt_cloud_queue.put(packed_data)
                     
                     if 'icp' in lidar_cloud and np.any(self.transformation_matrix != lidar_cloud['icp']):
-                        # Store the first 50 transformation matrices
-                        if len(self.collected_matrices) < 20:
+                        # Store the first 0 transformation matrices
+                        if len(self.collected_matrices) < 10:
                             self.collected_matrices.append(lidar_cloud['icp'])
                         
                         else:
                             self.calibre_ready_event.set()
                             self.transformation_matrix = lidar_cloud['icp']
-                            semaphore.release()
+                            print(f"Matrix T: {self.transformation_matrix}")
 
-                        # print(f"Matrix T: {self.transformation_matrix}")
-                    else:
-                        print("Key 'icp' does not exist in lidar_cloud!")
+                        
                     
+                                        
                 else:
                     print("Lack of cloud points")
                     
     def lidar_calibrate(self):
         if not self.collected_matrices:
-            raise ValueError("Brak zebranych macierzy do kalibracji.")
+            raise ValueError("Lack of calibrate data")
 
        
         if not all(isinstance(mat, np.ndarray) and mat.shape == (4, 4) for mat in self.collected_matrices):
@@ -148,18 +166,15 @@ class Lidar_LM1:
 
         print(f"Received calibrated_matrix: {calibrated_matrix}")
         print(f"Shape of calibrated_matrix: {calibrated_matrix.shape}")
-
+    
         return calibrated_matrix
     
     def get_dirty(self):
         return self.is_dirty
     
-    def get_current_quaternions(self):
-        return self.current_quaternions
-    
-    def get_current_cloud(self):
-        return self.current_cloud
-    
     def get_transformation_matrix(self):
         return self.transformation_matrix
+    
+    def get_azimuth(self):
+        return self.azimuth
     

@@ -7,7 +7,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 from utils import select_channel
 
-from adafruit_bmp3xx import BMP3XX_I2C
+from adafruit_bmp3xx import BMP3XX_I2C # type: ignore
 
 class Bmp388:
   channel = 0
@@ -51,5 +51,6 @@ class Bmp388:
     if not self.data_queue.empty():
         return self.data_queue.get()
     else:
-        print("\nEmpty queue bmp388")
+        #debug to check queue capacity
+        #print("\nEmpty queue bmp388")
         return None

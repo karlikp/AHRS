@@ -1,24 +1,24 @@
 import sys
 import queue
-sys.path.append('/home/karol/Desktop/repos/SLAM/lib')
-
 import struct
-from lib.DFRobot_BMX160 import BMX160
 import smbus
 import time
 import threading
 
+sys.path.append('/home/karol/Desktop/repos/SLAM/lib')
+from lib.DFRobot_BMX160 import BMX160
+from .IMU_calibrator import IMU_calibrator
+
 class Bmx160:
 
     
-    
     def __init__(self, bus):
-        self.current_imu = {}
         self.mqtt_imu_queue = queue.Queue() 
-        self.calibre_data = [] 
-        self.calibre_data_ready = False
+        self.calibre_samples = [] 
+        self.calibre_imu_ready = False
         self.calibre_ready_event = threading.Event()
         
+        self.imu_calibrator = IMU_calibrator()
         self.sensor = BMX160(1)
         self.i2cbus = smbus.SMBus(bus)
         self.i2c_addr = 0x68
@@ -37,45 +37,42 @@ class Bmx160:
 
             # Prepare IMU data
             imu_data = {
-                'mag': [round(data[i], 2) for i in range(3)],               # magnetometer: xyz
-                'gyro': [round(data[i], 2) for i in range(3, 6)],               # gyroscope: xyz
-                 'acc': [round(data[i], 2) for i in range(6, 9)]                 # accelerometer: xyz
+                'mag': [round(data[i], 2) for i in range(3)],               
+                'gyro': [round(data[i], 2) for i in range(3, 6)],              
+                 'acc': [round(data[i], 2) for i in range(6, 9)]                 
             }
-            
-            
-            
-            #debug print
-            #print(self.current_imu)
 
-            # Save the first 100 readings to calibre_data
-            if len(self.calibre_data) < 100:
-                self.calibre_data.append(imu_data)
+            # Save the first 20 readings to calibre_samples
+            if len(self.calibre_samples) < 20:
+                self.calibre_samples.append(imu_data)
             else:
-                self.current_imu = imu_data
-                self.calibre_data_ready = True
+                self.calibre_imu_ready = True
+                calibrate_imu = self.process_imu_data(imu_data)
                 self.calibre_ready_event.set()
-
-            # Serialize data into bytearray for MQTT
-            packed_data = bytearray(struct.pack('9f', *[val for sublist in imu_data.values() for val in sublist]))
-            self.mqtt_imu_queue.put(packed_data)
+                # Serialize data into bytearray for MQTT
+                packed_data = bytearray(struct.pack('9f', *[val for sublist in calibrate_imu.values() for val in sublist]))
+                self.mqtt_imu_queue.put(packed_data)
 
         except Exception as e:
             print(f"Error while saving BMX160 data to queue: {e}")
             
+    def process_imu_data(self, imu_data):
+        
+        self.imu_calibrator.calc_biases(self.calibre_samples)
+        
+        calibrate_imu = self.imu_calibrator.apply_calibration(imu_data)
+        
+        return calibrate_imu
+        
     def get_data_from_queue(self):
         if not self.mqtt_imu_queue.empty():
             return self.mqtt_imu_queue.get()
         else:
-            print("\nEmpty queue bmx160")
+            #debug to check queue capacity
+            #print("\nEmpty queue bmx160")
             return None
-        
-    def get_current_imu(self):
-        return self.current_imu
     
-    # 0-2 xyz gyroscope; 3-5 xyz accelerometer
-    def get_calibre_data(self):
-        return self.calibre_data
+    def get_calibre_imu_status(self):
+        return self.calibre_imu_ready
     
-    def get_calibre_status(self):
-        return self.calibre_data_ready
     
