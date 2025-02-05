@@ -87,16 +87,20 @@ class Data_manager:
         queue_topic_mapping = {
             self.lidar.mqtt_imu_queue: "Lidar/imu",
             self.lidar.mqtt_cloud_queue: "Lidar/cloud",
-            self.lidar.mqtt_dirty_queue: "Lidar/dirty",
-            self.lidar.mqtt_azimuth_queue: "Lidar/azimuth"
+            self.lidar.mqtt_dirty_queue: "Lidar/dirty"
         }
-
+        topic_azimuth = "Lidar/azimuth"
         threads = []
+        
         for queue, topic in queue_topic_mapping.items():
-            t = threading.Thread(target=self.Lidar_deamon, args=(queue, topic), daemon=True)
-            threads.append(t)
-            t.start()
-
+            queue_thread = threading.Thread(target=self.Lidar_deamon, args=(queue, topic), daemon=True)
+            threads.append(queue_thread)
+            queue_thread.start()
+        
+        variable_thread = threading.Thread( target=self.Lidar_deamon, args=(lambda: self.lidar.azimuth, topic_azimuth), daemon=True)
+        threads.append(variable_thread)
+        variable_thread.start()
+        
         try:
             while any(t.is_alive() for t in threads):
                 time.sleep(1)
@@ -118,16 +122,18 @@ class Data_manager:
 
                 time.sleep(0.1)  
                 
-    def Lidar_deamon(self, queue, topic):
+    def Lidar_deamon(self, data_pack, topic):
         
             while True:
                 try:
-                    while queue.empty():
-                        #print(f"Kolejka dla {topic} jest pusta, czekam na dane...")
+                    while data_pack.empty():
                         time.sleep(0.5)
-                    
-                    data = queue.get_nowait()  # Load data without block
-                    self.mqtt_client.client.publish(topic, data)
+
+                    if topic != "Lidar/azimuth":
+                        data = data_pack.get_nowait()  # Load data without block
+                        self.mqtt_client.client.publish(topic, data)
+                    else:
+                        self.mqtt_client.client.publish(topic, data_pack)
 
                 except Exception as e:
                     print(f"send lidar data exception: {e}")

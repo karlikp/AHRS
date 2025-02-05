@@ -19,9 +19,9 @@ class Lidar_LM1:
         self.mqtt_imu_queue = queue.Queue()
         self.mqtt_cloud_queue = queue.Queue()
         self.mqtt_dirty_queue = queue.Queue()
-        self.mqtt_azimuth_queue = queue.Queue()    #TO DO
         self.mqtt_trans_matrix_queue = queue.Queue()  #TO DO
         
+        self.azimuth = None
         self.compass_is_calibrated = False
         self.compass = Compass()
         self.current_quaternions = []
@@ -87,22 +87,19 @@ class Lidar_LM1:
 
                 if lidar_imu:
    
-                    #Output data: 1)Timestamp: Double, 2)quaternion: Table of Float
-                    packed_data = bytearray(
+                    
+                    quaternions_pack = bytearray(
                             struct.pack('d4f', lidar_imu['timestamp'], *lidar_imu['quaternion'])
                         )
                     
-                    self.mqtt_imu_queue.put(packed_data) 
+                    self.mqtt_imu_queue.put(quaternions_pack) 
                     
                     if not self.compass_is_calibrated:
                         self.compass.calibrate(lidar_imu['quaternion'])
                         self.compass_is_calibrated = True
                     
-                    
+                    # Get compass data and sent to mqtt
                     self.azimuth = self.compass.get_corrected_azimuth(lidar_imu['quaternion'])
-                    
-                    self.mqtt_azimuth_queue.put(packed_data) 
-                    #time.sleep(0.05)
                                
                 else:
                     print("No IMU data received.")
@@ -116,17 +113,17 @@ class Lidar_LM1:
                     points = lidar_cloud['points']
                     timestamp = lidar_cloud['timestamp']
                     
-                    packed_data = bytearray(struct.pack('fI', timestamp, len(points)))
+                    quaternions_pack = bytearray(struct.pack('fI', timestamp, len(points)))
                                     
                     temp_cloud = []
 
                     for point in points:
                         x, y, z, intensity, point_time, ring = point
                         point_data = struct.pack('fffffI', x, y, z, intensity, point_time, ring)
-                        packed_data.extend(point_data) 
+                        quaternions_pack.extend(point_data) 
                         temp_cloud.append((x,y,z))
                     
-                    self.mqtt_cloud_queue.put(packed_data)
+                    self.mqtt_cloud_queue.put(quaternions_pack)
                     
                     if 'icp' in lidar_cloud and np.any(self.transformation_matrix != lidar_cloud['icp']):
                         # Store the first 0 transformation matrices
@@ -175,6 +172,4 @@ class Lidar_LM1:
     def get_transformation_matrix(self):
         return self.transformation_matrix
     
-    def get_azimuth(self):
-        return self.azimuth
     
