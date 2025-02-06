@@ -22,6 +22,7 @@ class Lidar_LM1:
         self.mqtt_trans_matrix_queue = queue.Queue()  #TO DO
         
         self.azimuth = None
+        self.calibration_finish = False
         self.compass_is_calibrated = False
         self.compass = Compass()
         self.current_quaternions = []
@@ -92,7 +93,8 @@ class Lidar_LM1:
                             struct.pack('d4f', lidar_imu['timestamp'], *lidar_imu['quaternion'])
                         )
                     
-                    self.mqtt_imu_queue.put(quaternions_pack) 
+                    if self.calibration_finish:
+                        self.mqtt_imu_queue.put(quaternions_pack) 
                     
                     if not self.compass_is_calibrated:
                         self.compass.calibrate(lidar_imu['quaternion'])
@@ -123,7 +125,8 @@ class Lidar_LM1:
                         quaternions_pack.extend(point_data) 
                         temp_cloud.append((x,y,z))
                     
-                    self.mqtt_cloud_queue.put(quaternions_pack)
+                    if self.calibration_finish:
+                        self.mqtt_cloud_queue.put(quaternions_pack)
                     
                     if 'icp' in lidar_cloud and np.any(self.tf_matrix != lidar_cloud['icp']):
                         # Store the first 0 transformation matrices
@@ -132,8 +135,8 @@ class Lidar_LM1:
                             
                         
                         else:
-                            if not self.calibre_ready_event.is_set(): 
-                                self.calibre_ready_event.set()
+                            self.calibration_finish = True
+                            self.calibre_ready_event.set()
                             self.tf_matrix = lidar_cloud['icp']
                             self.matrix_timestamp = lidar_cloud['matrix_timestamp']
                                                  
