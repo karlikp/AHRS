@@ -4,6 +4,8 @@
 
 #include "./../unitree_lidar_sdk/include/unitree_lidar_sdk.h"
 #include <csignal>
+#include <tuple>
+
 
 #include "function.h"
 
@@ -18,6 +20,8 @@ public:
     std::string port_name;
     bool init_ref = false;
     typename PointMatcher<float>::DataPoints ref;
+    long matrix_timestamp = NULL;
+    std::tuple< PM::TransformationParameters, PointMatcher<float>::DataPoints, long> icp_result;
     
     UnitreeLidarWrapper() {
         lreader = createUnitreeLidarReader();
@@ -114,13 +118,15 @@ public:
 
         auto data = convertToDataPoints<float>(complet_cloud);
         
-        auto icp_result = icp_simple(data, ref);
 
-        py::array_t<float> icp_matrix({4, 4}, icp_result.first.data());
+        auto [matrix, data_out, matrix_timestamp] = icp_simple(data, ref);
 
+        py::array_t<float> icp_matrix({4, 4}, matrix.data());
         cloud_data["icp"] = icp_matrix;
         
-        ref = icp_result.second;
+        ref = data_out;
+        
+        cloud_data["matrix_timestamp"] = matrix_timestamp;
         }
 
         return cloud_data;

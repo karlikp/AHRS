@@ -27,14 +27,14 @@ class Lidar_LM1:
         self.current_quaternions = []
         self.current_cloud = []
         self.stby_quaternions = []
-        self.azimuth = None
         
         self.is_dirty = False
         self.lidar = unitree_lidar_sdk_pybind.UnitreeLidarWrapper()
         self.lidar.set_working_mode(1)  # NORMAL
         
         self.collected_matrices = []
-        self.transformation_matrix = None
+        self.tf_matrix = None
+        self.matrix_mutex = threading.Lock()
         self.calibre_ready_event = threading.Event()
         
         time.sleep(1)
@@ -125,19 +125,18 @@ class Lidar_LM1:
                     
                     self.mqtt_cloud_queue.put(quaternions_pack)
                     
-                    if 'icp' in lidar_cloud and np.any(self.transformation_matrix != lidar_cloud['icp']):
+                    if 'icp' in lidar_cloud and np.any(self.tf_matrix != lidar_cloud['icp']):
                         # Store the first 0 transformation matrices
                         if len(self.collected_matrices) < 10:
                             self.collected_matrices.append(lidar_cloud['icp'])
+                            
                         
                         else:
-                            self.calibre_ready_event.set()
-                            self.transformation_matrix = lidar_cloud['icp']
-                            print(f"Matrix T: {self.transformation_matrix}")
-
-                        
-                    
-                                        
+                            if not self.calibre_ready_event.is_set(): 
+                                self.calibre_ready_event.set()
+                            self.tf_matrix = lidar_cloud['icp']
+                            self.matrix_timestamp = lidar_cloud['matrix_timestamp']
+                                                 
                 else:
                     print("Lack of cloud points")
                     
@@ -147,7 +146,7 @@ class Lidar_LM1:
 
        
         if not all(isinstance(mat, np.ndarray) and mat.shape == (4, 4) for mat in self.collected_matrices):
-            raise ValueError("Niepoprawny format macierzy w collected_matrices. Oczekiwano listy macierzy 4x4.")
+            raise ValueError("Invalid matrix format in collected_matrices. Expected a list of 4x4 matrices.")
 
         collected_matrices_np = np.array(self.collected_matrices)
 
@@ -170,6 +169,6 @@ class Lidar_LM1:
         return self.is_dirty
     
     def get_transformation_matrix(self):
-        return self.transformation_matrix
+        return self.tf_matrix
     
     

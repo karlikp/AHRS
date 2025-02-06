@@ -43,6 +43,7 @@ class Vl6180x:
                 distance = sensor.range
                 if channel not in self.distances:
                     self.distances[channel] = []
+                    #print(f"Channel {channel}, {distance}")
                 self.distances[channel].append(distance)
             except RuntimeError:
                 print(f"Channel {channel}, VL6180X Error reading distance")

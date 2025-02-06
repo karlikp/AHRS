@@ -2,10 +2,14 @@
 #include <Eigen/Dense>
 #include <flann/flann.hpp>
 #include <fstream>
+#include <chrono>
+#include <cstdint>
+#include <tuple>
+#include <vector>
 
 #include "function.h"
 
-std::pair< PointMatcher<float>::TransformationParameters, PointMatcher<float>::DataPoints> 
+std::tuple<PM::TransformationParameters, PointMatcher<float>::DataPoints, long> 
                         icp_simple(PointMatcher<float>::DataPoints data, PointMatcher<float>::DataPoints ref)
 {
 	
@@ -19,14 +23,19 @@ std::pair< PointMatcher<float>::TransformationParameters, PointMatcher<float>::D
 	// See the implementation of setDefault() to create a custom ICP algorithm
 	icp.setDefault();
 
-	// Compute the transformation to express data in ref
+	// Compute the transformation to express data in ref 
 	PM::TransformationParameters T = icp(data, ref);
+
+    long timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch()
+                        ).count();
+
 
 	// Transform data to express it in ref
 	DP data_out(data);
 	icp.transformations.apply(data_out, T);
 
-	return std::make_pair(T, data_out);
+	return std::make_tuple(T, data_out, timestamp);
 }
 
 // Funkcja do obliczania normalnych dla chmury punktów i zwracania połączonych wyników

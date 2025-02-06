@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <tuple>
 #include "../libpointmatcher/pointmatcher/PointMatcher.h"
 
 typedef PointMatcher<float> PM; // Używany typ PointMatcher
@@ -59,6 +60,6 @@ typename PointMatcher<T>::DataPoints convertToDataPoints(const std::vector<std::
 }
 
 typename PointMatcher<float>::DataPoints convertToDataPoints(const std::vector<Point3D>& points);
-
-std::pair< PointMatcher<float>::TransformationParameters, PointMatcher<float>::DataPoints> 
+//Deklaracja funkcji, podawaj same typy
+std::tuple<PM::TransformationParameters, PointMatcher<float>::DataPoints, long> 
                         icp_simple(PointMatcher<float>::DataPoints data, PointMatcher<float>::DataPoints ref);

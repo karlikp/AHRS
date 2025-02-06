@@ -4,6 +4,7 @@ import busio
 import threading
 import sys
 import os
+import numpy as np
 from smbus2 import SMBus  
 
 
@@ -89,7 +90,6 @@ class Data_manager:
             self.lidar.mqtt_cloud_queue: "Lidar/cloud",
             self.lidar.mqtt_dirty_queue: "Lidar/dirty"
         }
-        topic_azimuth = "Lidar/azimuth"
         threads = []
         
         for queue, topic in queue_topic_mapping.items():
@@ -97,9 +97,13 @@ class Data_manager:
             threads.append(queue_thread)
             queue_thread.start()
         
-        variable_thread = threading.Thread( target=self.Lidar_deamon, args=(lambda: self.lidar.azimuth, topic_azimuth), daemon=True)
+        variable_thread = threading.Thread(target=self.azimuth_deamon, args=(self.lidar,), daemon=True)
         threads.append(variable_thread)
         variable_thread.start()
+        
+        icp_matrix_thread = threading.Thread(target=self.send_icp_matrix_binary, args=(self.lidar,), daemon=True)
+        threads.append(icp_matrix_thread)
+        icp_matrix_thread.start()
         
         try:
             while any(t.is_alive() for t in threads):
@@ -122,18 +126,54 @@ class Data_manager:
 
                 time.sleep(0.1)  
                 
+    def azimuth_deamon(self, lidar):
+       
+        while True:
+            try:
+                azimuth_value = lidar.azimuth  
+                self.mqtt_client.client.publish("Lidar/azimuth", azimuth_value)  
+
+            except Exception as e:
+                print(f"send azimuth data exception: {e}")
+                return  
+
+            time.sleep(0.5)  
+            
+    
+    def send_icp_matrix_binary(self, lidar):
+        
+        while True:
+            try:
+
+                # Pobierz aktualny timestamp
+                timestamp = lidar.matrix_timestamp  # 8 bajtów
+                timestamp_bytes = np.array([timestamp], dtype=np.uint64).tobytes()
+
+                # Konwersja macierzy do bytes
+                matrix_bytes = lidar.tf_matrix.astype(np.float32).tobytes()
+
+                # Połączenie timestamp + macierz
+                full_payload = timestamp_bytes + matrix_bytes
+
+                # Publikacja na MQTT
+                self.mqtt_client.client.publish("Lidar/icp_tf_matrix", full_payload)
+                
+                time.sleep(0.5)
+
+            except Exception as e:
+                print(f"send icp_matrix_binary exception: {e}")
+            
+        
+     
     def Lidar_deamon(self, data_pack, topic):
         
             while True:
                 try:
                     while data_pack.empty():
                         time.sleep(0.5)
-
-                    if topic != "Lidar/azimuth":
-                        data = data_pack.get_nowait()  # Load data without block
-                        self.mqtt_client.client.publish(topic, data)
-                    else:
-                        self.mqtt_client.client.publish(topic, data_pack)
+        
+                    data = data_pack.get_nowait()  # Load data without block
+                    self.mqtt_client.client.publish(topic, data)
 
                 except Exception as e:
                     print(f"send lidar data exception: {e}")
@@ -145,12 +185,6 @@ class Data_manager:
             
     def lidar_is_dirty(self):
         return self.lidar.get_dirty()
-    
-    def get_current_quaternions(self):
-        return self.lidar.get_current_quaternions()
-        
-    def get_current_cloud(self):
-        return self.lidar.get_current_cloud()
     
     def get_calibre_imu_status(self):
         return self.bmx160.get_calibre_imu_status()
