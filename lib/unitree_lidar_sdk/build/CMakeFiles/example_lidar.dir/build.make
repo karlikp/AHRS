@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pbl/Documents/SLAM/unitree_lidar_sdk
+CMAKE_SOURCE_DIR = /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pbl/Documents/SLAM/unitree_lidar_sdk/build
+CMAKE_BINARY_DIR = /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/example_lidar.dir/depend.make
@@ -70,18 +70,18 @@ include CMakeFiles/example_lidar.dir/progress.make
 include CMakeFiles/example_lidar.dir/flags.make
 
 CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o: CMakeFiles/example_lidar.dir/flags.make
-CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o: /home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/example_lidar.cpp
+CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o: /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/example_lidar.cpp
 CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o: CMakeFiles/example_lidar.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/pbl/Documents/SLAM/unitree_lidar_sdk/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o -MF CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o.d -o CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o -c /home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/example_lidar.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o -MF CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o.d -o CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o -c /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/example_lidar.cpp
 
 CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/example_lidar.cpp > CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/example_lidar.cpp > CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.i
 
 CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/example_lidar.cpp -o CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/example_lidar.cpp -o CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.s
 
 # Object files for target example_lidar
 example_lidar_OBJECTS = \
@@ -90,14 +90,14 @@ example_lidar_OBJECTS = \
 # External object files for target example_lidar
 example_lidar_EXTERNAL_OBJECTS =
 
-/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/example_lidar: CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o
-/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/example_lidar: CMakeFiles/example_lidar.dir/build.make
-/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/example_lidar: CMakeFiles/example_lidar.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/pbl/Documents/SLAM/unitree_lidar_sdk/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/example_lidar"
+/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/example_lidar: CMakeFiles/example_lidar.dir/examples/example_lidar.cpp.o
+/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/example_lidar: CMakeFiles/example_lidar.dir/build.make
+/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/example_lidar: CMakeFiles/example_lidar.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/example_lidar"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/example_lidar.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-CMakeFiles/example_lidar.dir/build: /home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/example_lidar
+CMakeFiles/example_lidar.dir/build: /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/example_lidar
 .PHONY : CMakeFiles/example_lidar.dir/build
 
 CMakeFiles/example_lidar.dir/clean:
@@ -105,6 +105,6 @@ CMakeFiles/example_lidar.dir/clean:
 .PHONY : CMakeFiles/example_lidar.dir/clean
 
 CMakeFiles/example_lidar.dir/depend:
-	cd /home/pbl/Documents/SLAM/unitree_lidar_sdk/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pbl/Documents/SLAM/unitree_lidar_sdk /home/pbl/Documents/SLAM/unitree_lidar_sdk /home/pbl/Documents/SLAM/unitree_lidar_sdk/build /home/pbl/Documents/SLAM/unitree_lidar_sdk/build /home/pbl/Documents/SLAM/unitree_lidar_sdk/build/CMakeFiles/example_lidar.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build/CMakeFiles/example_lidar.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/example_lidar.dir/depend
 

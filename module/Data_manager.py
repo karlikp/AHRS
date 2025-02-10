@@ -59,7 +59,7 @@ class Data_manager:
     def lidar_reading(self):   
         try:
             self.lidar.check_init()
-            self.lidar.check_dirty()
+            #self.lidar.check_dirty()
             self.lidar.parsing_data()
         except Exception as e:
             print(f"Error in lidar_reading: {e}") 

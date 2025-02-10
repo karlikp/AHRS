@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp" "CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o" "gcc" "CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o.d"
+  "/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp" "CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o" "gcc" "CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o.d"
   )
 
 # Targets to which this target links.

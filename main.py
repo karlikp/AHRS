@@ -20,7 +20,7 @@ if __name__ == "__main__":
     lidar_thread.start()
     
     data_manager.bmx160.calibre_ready_event.wait() # Waiting for IMU calibration
-    data_manager.lidar.calibre_ready_event.wait() # Waiting for Lidar calibration
+    #data_manager.lidar.calibre_ready_event.wait() # Waiting for Lidar calibration
     time.sleep(0.5)
     
     AHRS_mqtt = threading.Thread(target = data_manager.send_AHRS_data)

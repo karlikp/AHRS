@@ -76,7 +76,7 @@ class Lidar_LM1:
 
     def parsing_data(self):
         print(f"Parsing data (PointCloud and IMU)...")
-        print(f"Waiting for sensors calibration...")
+        
         
 
         while True:

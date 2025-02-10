@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/unilidar_subscriber_udp"
-  "/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/unilidar_subscriber_udp.pdb"
+  "/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/unilidar_subscriber_udp"
+  "/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/unilidar_subscriber_udp.pdb"
   "CMakeFiles/unilidar_subscriber_udp.dir/examples/unilidar_subscriber_udp.cpp.o"
   "CMakeFiles/unilidar_subscriber_udp.dir/examples/unilidar_subscriber_udp.cpp.o.d"
 )

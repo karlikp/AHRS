@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pbl/Documents/SLAM/unitree_lidar_sdk
+CMAKE_SOURCE_DIR = /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pbl/Documents/SLAM/unitree_lidar_sdk/build
+CMAKE_BINARY_DIR = /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/unilidar_publisher_udp.dir/depend.make
@@ -70,18 +70,18 @@ include CMakeFiles/unilidar_publisher_udp.dir/progress.make
 include CMakeFiles/unilidar_publisher_udp.dir/flags.make
 
 CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o: CMakeFiles/unilidar_publisher_udp.dir/flags.make
-CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o: /home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp
+CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o: /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp
 CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o: CMakeFiles/unilidar_publisher_udp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/pbl/Documents/SLAM/unitree_lidar_sdk/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o -MF CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o.d -o CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o -c /home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o -MF CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o.d -o CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o -c /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp
 
 CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp > CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp > CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.i
 
 CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pbl/Documents/SLAM/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp -o CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/examples/unilidar_publisher_udp.cpp -o CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.s
 
 # Object files for target unilidar_publisher_udp
 unilidar_publisher_udp_OBJECTS = \
@@ -90,14 +90,14 @@ unilidar_publisher_udp_OBJECTS = \
 # External object files for target unilidar_publisher_udp
 unilidar_publisher_udp_EXTERNAL_OBJECTS =
 
-/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/unilidar_publisher_udp: CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o
-/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/unilidar_publisher_udp: CMakeFiles/unilidar_publisher_udp.dir/build.make
-/home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/unilidar_publisher_udp: CMakeFiles/unilidar_publisher_udp.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/pbl/Documents/SLAM/unitree_lidar_sdk/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/unilidar_publisher_udp"
+/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/unilidar_publisher_udp: CMakeFiles/unilidar_publisher_udp.dir/examples/unilidar_publisher_udp.cpp.o
+/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/unilidar_publisher_udp: CMakeFiles/unilidar_publisher_udp.dir/build.make
+/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/unilidar_publisher_udp: CMakeFiles/unilidar_publisher_udp.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/unilidar_publisher_udp"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/unilidar_publisher_udp.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-CMakeFiles/unilidar_publisher_udp.dir/build: /home/pbl/Documents/SLAM/unitree_lidar_sdk/bin/unilidar_publisher_udp
+CMakeFiles/unilidar_publisher_udp.dir/build: /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/bin/unilidar_publisher_udp
 .PHONY : CMakeFiles/unilidar_publisher_udp.dir/build
 
 CMakeFiles/unilidar_publisher_udp.dir/clean:
@@ -105,6 +105,6 @@ CMakeFiles/unilidar_publisher_udp.dir/clean:
 .PHONY : CMakeFiles/unilidar_publisher_udp.dir/clean
 
 CMakeFiles/unilidar_publisher_udp.dir/depend:
-	cd /home/pbl/Documents/SLAM/unitree_lidar_sdk/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pbl/Documents/SLAM/unitree_lidar_sdk /home/pbl/Documents/SLAM/unitree_lidar_sdk /home/pbl/Documents/SLAM/unitree_lidar_sdk/build /home/pbl/Documents/SLAM/unitree_lidar_sdk/build /home/pbl/Documents/SLAM/unitree_lidar_sdk/build/CMakeFiles/unilidar_publisher_udp.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build /home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/build/CMakeFiles/unilidar_publisher_udp.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/unilidar_publisher_udp.dir/depend
 

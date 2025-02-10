@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/pbl/Documents/SLAM/unitree_lidar_sdk/include
+CXX_INCLUDES = -I/home/pbl/Desktop/SLAM/lib/unitree_lidar_sdk/include
 
 CXX_FLAGS = -std=c++14  -O3 -Wall -DNDEBUG
 
