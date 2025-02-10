@@ -18,7 +18,7 @@ class Vl53l1x:
     def __init__(self, i2c):
         self.i2c = i2c
         self.sensors = {}
-        self.channels = {4, 5, 6}
+        self.channels = {1, 4, 5, 6}
         self.distances = {}
         self.topic = "AHRS/vl53l1x"
 

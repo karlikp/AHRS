@@ -11,14 +11,11 @@ from adafruit_vl6180x import VL6180X
 from utils import select_channel
 
 class Vl6180x:
-    sensors = {}
-    channels = [1, 2, 3]
-    distances = {}
 
     def __init__(self, i2c):
         self.i2c = i2c
         self.sensors = {}
-        self.channels = [1, 2, 3]
+        self.channels = [0,2 ,3 ,7]
         self.distances = {}
         self.data_queue = queue.Queue() 
         self.topic = "AHRS/vl6180x"
