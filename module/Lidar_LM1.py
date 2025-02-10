@@ -51,7 +51,7 @@ class Lidar_LM1:
         dirty_output = []
 
         while True:
-            lidar_dirty = self.lidar.get_dirty_percentage()
+            lidar_dirty = self.lidar.get_dirty_percentage() # Error with get_dirty_percentage!!!
             if lidar_dirty is not None:
                 print(f"Current lidar dirty percentage: {lidar_dirty}%")  # Dodaj logowanie
                 #lidar_dirty: Float

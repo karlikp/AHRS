@@ -15,7 +15,7 @@ class Vl6180x:
     def __init__(self, i2c):
         self.i2c = i2c
         self.sensors = {}
-        self.channels = [0,2 ,3 ,7]
+        self.channels = [0, 2, 3, 7]
         self.distances = {}
         self.data_queue = queue.Queue() 
         self.topic = "AHRS/vl6180x"

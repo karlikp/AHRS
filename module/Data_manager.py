@@ -181,7 +181,7 @@ class Data_manager:
                 time.sleep(0.5) 
         
     def mqtt_connect(self):
-            self.mqtt_client.client.connect("192.168.50.125", 1883, 60)
+            self.mqtt_client.client.connect("test.mosquitto.org", 1883, 60) #broker Krzyśka
             
     def lidar_is_dirty(self):
         return self.lidar.get_dirty()
