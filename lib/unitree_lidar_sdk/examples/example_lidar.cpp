@@ -42,7 +42,7 @@ int main(){
   printf("lidar sdk version = %s\n\n", lreader->getVersionOfSDK().c_str());
   sleep(2);
 
-  // Check lidar dirty percentange
+  Check lidar dirty percentange
   int count_percentage = 0;
   while(true){
     if( lreader->runParse() == AUXILIARY){
@@ -56,7 +56,7 @@ int main(){
       }
     }
     usleep(500);
-  }
+ }
   printf("\n");
   sleep(2);
 

@@ -24,7 +24,7 @@ class Data_manager:
         self.vl6180x = Vl6180x(self.i2c)
         self.vl53l1x = Vl53l1x(self.i2c)
 
-        self.mqtt_client = Mqtt("test.mosquitto.org")
+        self.mqtt_client = Mqtt("mqtt.eclipseprojects.io")
 
         self.AHRS_list = [self.bmp388, self.bmx160, self.vl6180x, self.vl53l1x] 
         self.lidar = Lidar_LM1()
@@ -59,7 +59,7 @@ class Data_manager:
     def lidar_reading(self):   
         try:
             self.lidar.check_init()
-            #self.lidar.check_dirty()
+         # self.lidar.check_dirty()
             self.lidar.parsing_data()
         except Exception as e:
             print(f"Error in lidar_reading: {e}") 
@@ -87,8 +87,8 @@ class Data_manager:
         
         queue_topic_mapping = {
             self.lidar.mqtt_imu_queue: "Lidar/imu",
-            self.lidar.mqtt_cloud_queue: "Lidar/cloud",
-            self.lidar.mqtt_dirty_queue: "Lidar/dirty"
+            # self.lidar.mqtt_cloud_queue: "Lidar/cloud"
+            # self.lidar.mqtt_dirty_queue: "Lidar/dirty"
         }
         threads = []
         
@@ -120,6 +120,7 @@ class Data_manager:
                     # check emptines
                     if data:
                         self.mqtt_client.client.publish(topic, data)
+                        #print("Debug AHRS")
                
                 except Exception as e:
                     print(f"Error occurred: {e}")
@@ -174,6 +175,7 @@ class Data_manager:
         
                     data = data_pack.get_nowait()  # Load data without block
                     self.mqtt_client.client.publish(topic, data)
+                    print("Debug lidar")
 
                 except Exception as e:
                     print(f"send lidar data exception: {e}")
@@ -181,7 +183,7 @@ class Data_manager:
                 time.sleep(0.5) 
         
     def mqtt_connect(self):
-            self.mqtt_client.client.connect("test.mosquitto.org", 1883, 60) #broker Krzyśka
+            self.mqtt_client.client.connect("mqtt.eclipseprojects.io", 1883, 60) #broker Krzyśka
             
     def lidar_is_dirty(self):
         return self.lidar.get_dirty()

@@ -19,7 +19,7 @@ class Lidar_LM1:
         self.mqtt_imu_queue = queue.Queue()
         self.mqtt_cloud_queue = queue.Queue()
         self.mqtt_dirty_queue = queue.Queue()
-        self.mqtt_trans_matrix_queue = queue.Queue()  #TO DO
+        self.mqtt_trans_matrix_queue = queue.Queue()  
         
         self.azimuth = None
         self.calibration_finish = False
@@ -128,17 +128,19 @@ class Lidar_LM1:
                     if self.calibration_finish:
                         self.mqtt_cloud_queue.put(quaternions_pack)
                     
-                    if 'icp' in lidar_cloud and np.any(self.tf_matrix != lidar_cloud['icp']):
-                        # Store the first 0 transformation matrices
-                        if len(self.collected_matrices) < 10:
-                            self.collected_matrices.append(lidar_cloud['icp'])
+                    #Transformation matrix
+                    
+                    # if 'icp' in lidar_cloud and np.any(self.tf_matrix != lidar_cloud['icp']):
+                    #     # Store the first 0 transformation matrices
+                    #     if len(self.collected_matrices) < 10:
+                    #         self.collected_matrices.append(lidar_cloud['icp'])
                             
                         
-                        else:
-                            self.calibration_finish = True
-                            self.calibre_ready_event.set()
-                            self.tf_matrix = lidar_cloud['icp']
-                            self.matrix_timestamp = lidar_cloud['matrix_timestamp']
+                    #     else:
+                    self.calibration_finish = True
+                    #self.calibre_ready_event.set() #calibration ready
+                    self.tf_matrix = lidar_cloud['icp']
+                    self.matrix_timestamp = lidar_cloud['matrix_timestamp']
                                                  
                 else:
                     print("Lack of cloud points")
