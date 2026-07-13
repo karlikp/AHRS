@@ -1,5 +1,5 @@
 # 🧭 Attitude and Heading Reference System for a smart valet
-I take part in project "Developing a smart valet parking system that utilizes optimal space". where I'm responsible for integrate  
+I take part in project "Developing a smart valet parking system that utilizes optimal space". where I'm responsible for integrate AHRS.  
 
 ## Table of contents:
 1. [Introduction](#1-introduction)
