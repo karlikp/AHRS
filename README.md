@@ -57,11 +57,17 @@ python3 main.py
 ## 5. Gallery:
 
   <!-- TO DO
-adding screen from runtime-->
+<img width="662" height="448" alt="Laweta_AHRS" src="" />-->
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/11971815-8101-4355-8803-93c04207fe87" alt="menu">
   <p>Fig. 1. Use case diagram</p>
+</div>
+<br>
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/a8a5bf40-9616-4d11-bf71-c1c000481d70" alt="menu">
+  <p>Fig. 2. Laboratory testing of smart valet in a simulated parking environment.</p>
 </div>
 <br>
 
